@@ -12,12 +12,17 @@ import Element.Lazy as Lazy
 import Html
 import Html.Attributes
 import Lamdera
+import Point2d
 import Types exposing (..)
 import Url
 
 
 type alias Model =
     FrontendModel
+
+
+type alias Msg =
+    FrontendMsg
 
 
 app =
@@ -28,7 +33,7 @@ app =
         , update = update
         , updateFromBackend = updateFromBackend
         , subscriptions = \m -> Sub.none
-        , view = view
+        , view = viewWrapper
         }
 
 
@@ -36,10 +41,27 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , fishes = []
+      , fishes =
+            [ { id = 0, pos = Point2d.pixels 10 0 }
+            , { id = 1, pos = Point2d.pixels 40 100 }
+            ]
       }
     , Cmd.none
     )
+
+
+viewFish : Fish -> Element Msg
+viewFish fish =
+    text <|
+        String.fromFloat (.pos fish |> Point2d.toPixels |> .x)
+            ++ ", "
+            ++ String.fromFloat (.pos fish |> Point2d.toPixels |> .y)
+
+
+viewFishes : List Fish -> Element Msg
+viewFishes fishes =
+    column [] <|
+        List.map viewFish fishes
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
@@ -71,8 +93,8 @@ updateFromBackend msg model =
             ( model, Cmd.none )
 
 
-view : Model -> Browser.Document FrontendMsg
-view model =
+viewWrapper : Model -> Browser.Document FrontendMsg
+viewWrapper model =
     let
         elm_ui_hack_layout =
             Html.div [ Html.Attributes.style "height" "0" ]
@@ -109,8 +131,14 @@ view model =
             , centerX
             ]
           <|
-            column [ width fill, height fill ]
-                [ el [ centerX ] <| text "Welcome to Fishes"
-                ]
+            view model
         ]
     }
+
+
+view : Model -> Element FrontendMsg
+view model =
+    column [ width fill, height fill ]
+        [ el [ centerX ] <| text "Welcome to Fishes"
+        , viewFishes model.fishes
+        ]

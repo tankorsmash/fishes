@@ -19,9 +19,11 @@ type alias BackendModel =
     }
 
 
+type alias Pixel2i = Point2d.Point2d Pixels.Pixels Int
+
 type alias Fish =
     { id : Int
-    , pos : Point2d.Point2d Pixels.Pixels Int
+    , pos : Pixel2i
     }
 
 
