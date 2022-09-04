@@ -1,34 +1,43 @@
-module Types exposing (..)
+module Types exposing (..)
 
-import Browser exposing (UrlRequest)
-import Browser.Navigation exposing (Key)
-import Url exposing (Url)
-
-
-type alias FrontendModel =
-    { key : Key
-    , message : String
-    }
+import Browser exposing (UrlRequest)
+import Browser.Navigation exposing (Key)
+import Point2d
+import Url exposing (Url)
+import Pixels
 
 
-type alias BackendModel =
-    { message : String
-    }
+type alias FrontendModel =
+    { key : Key
+    , message : String
+    , fishes : List Fish
+    }
 
 
-type FrontendMsg
-    = UrlClicked UrlRequest
-    | UrlChanged Url
-    | NoOpFrontendMsg
+type alias BackendModel =
+    { message : String
+    }
 
 
-type ToBackend
-    = NoOpToBackend
+type alias Fish =
+    { id : Int
+    , pos : Point2d.Point2d Pixels.Pixels Int
+    }
 
 
-type BackendMsg
-    = NoOpBackendMsg
+type FrontendMsg
+    = UrlClicked UrlRequest
+    | UrlChanged Url
+    | NoOpFrontendMsg
 
 
-type ToFrontend
+type ToBackend
+    = NoOpToBackend
+
+
+type BackendMsg
+    = NoOpBackendMsg
+
+
+type ToFrontend
     = NoOpToFrontend
