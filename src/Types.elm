@@ -60,6 +60,12 @@ initFish =
     , hunger = Sated (Time.millisToPosix 0)
     }
 
+initCoin : Coin
+initCoin =
+    { id = 0
+    , pos = Point2d.pixels 0 0
+    }
+
 
 type alias FishId = Int
 

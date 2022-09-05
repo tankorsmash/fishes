@@ -4,6 +4,7 @@ import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Color
 import Color.Manipulate
+import Direction2d
 import Duration
 import Element exposing (Color, Element, alignBottom, alignLeft, alignRight, alignTop, centerX, centerY, column, el, explain, fill, fillPortion, height, modular, padding, paddingXY, paragraph, px, rgb, rgb255, row, scrollbars, spacing, spacingXY, text, width)
 import Element.Background as Background
@@ -11,11 +12,14 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
+import Element.Keyed as Keyed
 import Element.Lazy as Lazy
 import Html
 import Html.Attributes
 import Lamdera
+import Length
 import List.Extra
+import Pixels
 import Point2d exposing (pixels)
 import Random
 import Time
@@ -69,6 +73,11 @@ fishSize =
     { w = 70, h = 40 }
 
 
+coinSize : Size
+coinSize =
+    { w = 40, h = 40 }
+
+
 aquariumSize : Size
 aquariumSize =
     { w = 720, h = 500 }
@@ -95,10 +104,44 @@ monospace : List (Element.Attribute msg) -> Element msg -> Element msg
 monospace attrs el =
     Element.el (Font.family [ Font.monospace ] :: attrs) el
 
+noUserSelect : Element.Attribute msg
+noUserSelect =
+    Html.Attributes.style "userSelect" "none" |> Element.htmlAttribute
 
-viewCoin : Time.Posix -> Coin -> Element Msg
-viewCoin lastTickTime coin =
-    text "coin"
+
+viewCoin : Coin -> Element Msg
+viewCoin coin =
+    let
+        backgroundColor : Color.Color
+        backgroundColor =
+            Color.yellow
+
+        coinPos =
+            .pos coin |> Point2d.toPixels
+
+        coinX =
+            coinPos.x - (.w coinSize |> toFloat >> (\w -> w / 2))
+
+        coinY =
+            coinPos.y - (.h coinSize |> toFloat >> (\h -> h / 2))
+    in
+    Keyed.el
+        [ width <| px (.w coinSize)
+        , height <| px (.h coinSize)
+        , Background.color <| convertColor <| backgroundColor
+        , Border.rounded <| 10
+        , Element.moveRight coinX
+        , Element.moveDown coinY
+
+        -- , Events.onClick (FeedFish fish.id)
+        , Element.pointer
+        , Element.mouseOver [ Background.color (backgroundColor |> Color.Manipulate.lighten 0.1 |> convertColor) ]
+        ]
+    <|
+        ( String.fromInt coin.id
+        , monospace [ centerX, centerY ] <|
+            text "coin"
+        )
 
 
 viewFish : Time.Posix -> Fish -> Element Msg
@@ -125,7 +168,7 @@ viewFish lastTickTime fish =
         roundNumber str =
             String.padLeft 3 '0' str
     in
-    el
+    Keyed.el
         [ width <| px (.w fishSize)
         , height <| px (.h fishSize)
         , Background.color <| convertColor <| backgroundColor
@@ -135,9 +178,11 @@ viewFish lastTickTime fish =
         , Events.onClick (FeedFish fish.id)
         , Element.pointer
         , Element.mouseOver [ Background.color (backgroundColor |> Color.Manipulate.lighten 0.1 |> convertColor) ]
+        , noUserSelect
         ]
     <|
-        monospace [ centerX, centerY ] <|
+        ( String.fromInt fish.id
+        , monospace [ centerX, centerY ] <|
             text <|
                 let
                     prettyPos : ({ x : Float, y : Float } -> Float) -> String
@@ -155,6 +200,7 @@ viewFish lastTickTime fish =
                         prettyPos .y
                 in
                 xPos ++ ", " ++ yPos
+        )
 
 
 viewFishes : Time.Posix -> List Fish -> List Coin -> Element Msg
@@ -167,7 +213,7 @@ viewFishes lastTickTime fishes coins =
          , Background.color <| rgb255 28 163 236
          ]
             ++ List.map (Element.inFront << viewFish lastTickTime) fishes
-            ++ List.map (Element.inFront << viewCoin lastTickTime) coins
+            ++ List.map (Element.inFront << viewCoin) coins
         )
     <|
         [ text "" ]
@@ -256,34 +302,73 @@ isHungry lastTickTime hunger =
     secondsSinceEaten > secondsLimit
 
 
+moveFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List Fish, Random.Seed, List Coin )
+moveFish lastTickTime fish ( fishes, seed, coins ) =
+    let
+        newPos oldPos =
+            Point2d.translateBy (Vector2d.pixels 2 0) oldPos
+                |> (\np ->
+                        let
+                            pix =
+                                Point2d.toPixels np
+                        in
+                        if round pix.x >= aquariumSize.w then
+                            Point2d.fromPixels { pix | x = 0 }
+
+                        else
+                            np
+                   )
+
+        (newCoins_, newSeed) =
+            if isHungry lastTickTime fish.hunger then
+                (coins, seed)
+
+            else
+                (initCoin :: coins, seed)
+    in
+    ( { fish | pos = newPos fish.pos } :: fishes, newSeed, newCoins_ )
+
+
+moveCoin : Coin -> ( List Coin, Random.Seed ) -> ( List Coin, Random.Seed )
+moveCoin coin ( movedCoins, seed ) =
+    let
+        newPos =
+            coin.pos
+                |> Point2d.translateIn Direction2d.y (Pixels.pixels 1)
+                |> (\np ->
+                        let
+                            pix =
+                                Point2d.toPixels np
+                        in
+                        if round pix.y >= aquariumSize.h then
+                            Point2d.fromPixels { pix | y = toFloat <| aquariumSize.h }
+
+                        else
+                            np
+                   )
+    in
+    ( { coin | pos = newPos } :: movedCoins, seed )
+
+
 onGameTick : Model -> Int -> ( Model, Cmd Msg )
 onGameTick model deltaTime =
     let
-        moveFish : Fish -> ( List Fish, Random.Seed ) -> ( List Fish, Random.Seed )
-        moveFish fish ( fishes, seed ) =
-            let
-                newPos oldPos =
-                    Point2d.translateBy (Vector2d.pixels 2 0) oldPos
-                        |> (\np ->
-                                let
-                                    pix =
-                                        Point2d.toPixels np
-                                in
-                                if round pix.x >= aquariumSize.w then
-                                    Point2d.fromPixels { pix | x = 0 }
+        ( newFishes, newSeed_, newCoins_ ) =
+            List.foldl
+                (moveFish model.lastTickTime)
+                ( [], model.globalSeed, [] )
+                model.fishes
 
-                                else
-                                    np
-                           )
-            in
-            ( { fish | pos = newPos fish.pos } :: fishes, seed )
-
-        ( newFishes, newSeed ) =
-            List.foldl moveFish ( [], model.globalSeed ) model.fishes
+        ( newCoins, newSeed ) =
+            List.foldl
+                moveCoin
+                ( [], newSeed_ )
+                (model.coins ++ newCoins_)
     in
     ( { model
         | fishes = newFishes
         , globalSeed = newSeed
+        , coins = newCoins
       }
     , Cmd.none
     )
@@ -349,6 +434,8 @@ view model =
     column [ width fill, height fill ]
         [ el [ centerX ] <| text "Welcome to Fishes"
         , viewFishes model.lastTickTime model.fishes model.coins
-        , row [ centerX ] <|
-            [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times" ]
+        , row [ centerX, spacing 10 ] <|
+            [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times"
+            , el [ Font.size <| round <| scaled 1 ] <| text <| "Coins in play: " ++ (String.fromInt <| List.length model.coins)
+            ]
         ]
