@@ -317,6 +317,11 @@ update msg model =
             )
 
 
+generateCoinId : Random.Generator Int
+generateCoinId =
+    Random.int 0 100000000
+
+
 generateFishId : Random.Generator Int
 generateFishId =
     Random.int 0 100000000
@@ -339,10 +344,12 @@ generateFish =
         generateFishPos
 
 
+priceOfFish : Int
 priceOfFish =
     5
 
 
+canAffordBuyingFish : Int -> Bool
 canAffordBuyingFish coinsCollected =
     coinsCollected >= priceOfFish
 
@@ -443,16 +450,13 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
         ( newCoins_, newSeed ) =
             if isSated then
                 let
-                    ( ( res, coinId ), newSeed_ ) =
+                    ( ( shouldSpawnCoin, coinId ), newSeed_ ) =
                         Random.step
                             (Random.map2 Tuple.pair
-                                (Random.int 0 600)
-                                (Random.int 0 100000000)
+                                generateShouldSpawnCoin
+                                generateCoinId
                             )
                             seed
-
-                    shouldSpawnCoin =
-                        res <= 2
                 in
                 if shouldSpawnCoin then
                     let
@@ -474,6 +478,15 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
             newPos fish.pos newSeed
     in
     ( { fish | pos = newestPos } :: fishes, newestSeed, newCoins_ )
+
+
+generateShouldSpawnCoin : Random.Generator Bool
+generateShouldSpawnCoin =
+    Random.int 0 600
+        |> Random.andThen
+            (\res ->
+                Random.constant (res <= 2)
+            )
 
 
 pixelsDown : Float -> Pixel2i -> Pixel2i
@@ -586,6 +599,7 @@ scaled =
     Element.modular 16 1.25
 
 
+viewDebugRow : Model -> Element msg
 viewDebugRow model =
     row [ centerX, spacing 10, Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 } ] <|
         [ el [ Font.size <| round <| scaled 2, centerY ] <| text "Debug: "
@@ -595,6 +609,7 @@ viewDebugRow model =
         ]
 
 
+viewCommandRow : Model -> Element FrontendMsg
 viewCommandRow model =
     row [ centerX, spacing 10 ] <|
         [ el [ Font.size <| round <| scaled 1 ] <| text <| "Coins collected: " ++ String.fromInt model.coinsCollected
