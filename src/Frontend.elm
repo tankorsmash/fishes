@@ -3,6 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Color
+import Color.Manipulate
 import Duration
 import Element exposing (Color, Element, alignBottom, alignLeft, alignRight, alignTop, centerX, centerY, column, el, explain, fill, fillPortion, height, modular, padding, paddingXY, paragraph, px, rgb, rgb255, row, scrollbars, spacing, spacingXY, text, width)
 import Element.Background as Background
@@ -87,6 +88,11 @@ colorFromInt int positiveColor neutralColor negativeColor =
         negativeColor
 
 
+monospace : List (Element.Attribute msg) -> Element msg -> Element msg
+monospace attrs el =
+    Element.el (Font.family [ Font.monospace ] :: attrs) el
+
+
 viewFish : Time.Posix -> Fish -> Element Msg
 viewFish lastTickTime fish =
     let
@@ -105,6 +111,7 @@ viewFish lastTickTime fish =
                 |> toFloat
                 |> Duration.milliseconds
 
+        backgroundColor : Color.Color
         backgroundColor =
             let
                 secondsSinceEaten =
@@ -113,30 +120,46 @@ viewFish lastTickTime fish =
                 secondsLimit =
                     Duration.seconds 5 |> Duration.inSeconds
             in
-            (if secondsSinceEaten > secondsLimit then
+            if secondsSinceEaten > secondsLimit then
                 Color.red
 
-             else
+            else
                 Color.green
-            )
-                |> convertColor
 
-        -- rgb 1 0 1
+        roundNumber : String -> String
+        roundNumber str =
+            String.padLeft 3 '0' str
     in
     el
         [ width <| px (.w fishSize)
         , height <| px (.h fishSize)
-        , Background.color <| backgroundColor
+        , Background.color <| convertColor <| backgroundColor
         , Border.rounded <| 10
         , Element.moveRight fishX
         , Element.moveDown fishY
         , Events.onClick (FeedFish fish.id)
+        , Element.pointer
+        , Element.mouseOver [ Background.color (backgroundColor |> Color.Manipulate.lighten 0.1 |> convertColor) ]
         ]
     <|
-        text <|
-            String.fromFloat (.pos fish |> Point2d.toPixels |> .x)
-                ++ ", "
-                ++ String.fromFloat (.pos fish |> Point2d.toPixels |> .y)
+        monospace [] <|
+            text <|
+                let
+                    prettyPos : ({ x : Float, y : Float } -> Float) -> String
+                    prettyPos getter =
+                        .pos fish
+                            |> Point2d.toPixels
+                            |> getter
+                            |> String.fromFloat
+                            |> roundNumber
+
+                    xPos =
+                        prettyPos .x
+
+                    yPos =
+                        prettyPos .y
+                in
+                xPos ++ ", " ++ yPos
 
 
 viewFishes : Time.Posix -> List Fish -> Element Msg
