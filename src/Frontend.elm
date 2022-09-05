@@ -377,8 +377,8 @@ moveCoin coin ( movedCoins, seed ) =
                             pix =
                                 Point2d.toPixels np
                         in
-                        if round pix.y >= aquariumSize.h then
-                            Point2d.fromPixels { pix | y = toFloat <| aquariumSize.h }
+                        if round pix.y >= (aquariumSize.h - coinSize.h//2) then
+                            Point2d.fromPixels { pix | y = toFloat <| aquariumSize.h - coinSize.h //2  }
 
                         else
                             np
@@ -405,7 +405,7 @@ onGameTick model =
     ( { model
         | fishes = List.reverse newFishes
         , globalSeed = newSeed
-        , coins = newCoins
+        , coins = List.reverse newCoins
       }
     , Cmd.none
     )
