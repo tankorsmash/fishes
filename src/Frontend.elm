@@ -63,7 +63,7 @@ type alias Size =
 
 fishSize : Size
 fishSize =
-    { w = 70, h = 20 }
+    { w = 70, h = 40 }
 
 
 aquariumSize : Size
@@ -142,7 +142,7 @@ viewFish lastTickTime fish =
         , Element.mouseOver [ Background.color (backgroundColor |> Color.Manipulate.lighten 0.1 |> convertColor) ]
         ]
     <|
-        monospace [] <|
+        monospace [ centerX, centerY ] <|
             text <|
                 let
                     prettyPos : ({ x : Float, y : Float } -> Float) -> String
@@ -315,9 +315,15 @@ viewWrapper model =
     }
 
 
+scaled =
+    Element.modular 16 1.25
+
+
 view : Model -> Element FrontendMsg
 view model =
     column [ width fill, height fill ]
         [ el [ centerX ] <| text "Welcome to Fishes"
         , viewFishes model.lastTickTime model.fishes
+        , row [ centerX ] <|
+            [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times" ]
         ]
