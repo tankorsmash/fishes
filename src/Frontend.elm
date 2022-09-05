@@ -341,7 +341,9 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                 if shouldSpawnCoin then
                     let
                         newCoin =
-                            { initCoin | pos = fish.pos }
+                            { initCoin
+                                | pos = fish.pos |> pixelsDown (fishSize.h // 2 + (coinSize.h // 2) |> toFloat)
+                            }
                     in
                     ( newCoin :: coins, newSeed_ )
 
