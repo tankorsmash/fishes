@@ -425,7 +425,7 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                         1.5
 
                      else
-                        1
+                        0.5
                     )
                 |> moveFishVerticallyIfSated isSated s
                 |> Tuple.mapFirst
@@ -485,7 +485,7 @@ generateShouldSpawnCoin =
     Random.int 0 600
         |> Random.andThen
             (\res ->
-                Random.constant (res <= 2)
+                Random.constant (res == 0)
             )
 
 
