@@ -134,15 +134,16 @@ viewCoin coin =
         , Border.rounded <| 10
         , Element.moveRight coinX
         , Element.moveDown coinY
-
-        -- , Events.onClick (FeedFish fish.id)
+        , Events.onClick (CollectCoin coin.id)
         , Element.pointer
         , Element.mouseOver [ Background.color (backgroundColor |> Color.Manipulate.lighten 0.1 |> convertColor) ]
+        , noUserSelect
         ]
     <|
         ( String.fromInt coin.id
         , monospace [ centerX, centerY ] <|
-            text "coin"
+            text <|
+                String.fromInt coin.id
         )
 
 
@@ -277,6 +278,15 @@ update msg model =
             in
             ( { model | fishes = newFish }, Cmd.none )
 
+        CollectCoin coinId ->
+            let
+                newCoin =
+                    List.filter
+                        (\coin -> coin.id /= coinId)
+                        model.coins
+            in
+            ( { model | coins = newCoin }, Cmd.none )
+
 
 onFirstFrame : Model -> ( Model, Cmd Msg )
 onFirstFrame model =
@@ -362,9 +372,12 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
         ( newCoins_, newSeed ) =
             if isSated then
                 let
-                    ( res, newSeed_ ) =
+                    ( ( res, coinId ), newSeed_ ) =
                         Random.step
-                            (Random.int 0 600)
+                            (Random.map2 Tuple.pair
+                                (Random.int 0 600)
+                                (Random.int 0 100000000)
+                            )
                             seed
 
                     shouldSpawnCoin =
@@ -375,6 +388,7 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                         newCoin =
                             { initCoin
                                 | pos = fish.pos |> pixelsDown (fishSize.h // 2 + (coinSize.h // 2) |> toFloat)
+                                , id = coinId
                             }
                     in
                     ( newCoin :: coins, newSeed_ )

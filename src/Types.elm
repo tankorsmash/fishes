@@ -76,6 +76,7 @@ type FrontendMsg
     | NoOpFrontendMsg
     | GameTick Time.Posix
     | FeedFish FishId
+    | CollectCoin FishId
 
 
 type ToBackend
