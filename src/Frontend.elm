@@ -59,7 +59,7 @@ init url key =
             [ { initFish | pos = pixels 50 222, id = 1 }
             , { initFish | pos = pixels 199 20, id = 2 }
             ]
-      , coins = []
+      , coinsInPlay = []
       }
     , Cmd.none
     )
@@ -220,6 +220,7 @@ viewFishes lastTickTime fishes coins =
          , height <| px <| .h aquariumSize
          , Element.clip
          , Background.color <| rgb255 28 163 236
+         , noUserSelect
          ]
             ++ List.map (Element.inFront << viewFish lastTickTime) fishes
             ++ List.map (Element.inFront << viewCoin) coins
@@ -283,9 +284,9 @@ update msg model =
                 newCoin =
                     List.filter
                         (\coin -> coin.id /= coinId)
-                        model.coins
+                        model.coinsInPlay
             in
-            ( { model | coins = newCoin }, Cmd.none )
+            ( { model | coinsInPlay = newCoin }, Cmd.none )
 
 
 onFirstFrame : Model -> ( Model, Cmd Msg )
@@ -455,12 +456,12 @@ onGameTick model =
             List.foldl
                 moveCoin
                 ( [], newSeed_ )
-                (model.coins ++ newCoins_)
+                (model.coinsInPlay ++ newCoins_)
     in
     ( { model
         | fishes = List.reverse newFishes
         , globalSeed = newSeed
-        , coins = List.reverse newCoins
+        , coinsInPlay = List.reverse newCoins
       }
     , Cmd.none
     )
@@ -521,14 +522,22 @@ scaled =
     Element.modular 16 1.25
 
 
+viewDebugRow model =
+    row [ centerX, spacing 10, Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 } ] <|
+        [ el [ Font.size <| round <| scaled 2, centerY ] <| text "Debug: "
+        , el [ Font.size <| round <| scaled 1, centerY ] <| text "Fed XYZ Times"
+        , el [ Font.size <| round <| scaled 1, centerY ] <| text <| "Coins in play: " ++ (String.fromInt <| List.length model.coinsInPlay)
+        , el [ Font.size <| round <| scaled 1, centerY ] <| text <| "Frametime: " ++ (String.fromInt <| model.deltaTime) ++ "ms"
+        ]
+
+
 view : Model -> Element FrontendMsg
 view model =
     column [ width fill, height fill ]
         [ el [ centerX ] <| text "Welcome to Fishes"
-        , viewFishes model.lastTickTime model.fishes model.coins
+        , viewFishes model.lastTickTime model.fishes model.coinsInPlay
+        , viewDebugRow model
         , row [ centerX, spacing 10 ] <|
             [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times"
-            , el [ Font.size <| round <| scaled 1 ] <| text <| "Coins in play: " ++ (String.fromInt <| List.length model.coins)
-            , el [ Font.size <| round <| scaled 1 ] <| text <| "Frametime: " ++ (String.fromInt <| model.deltaTime) ++ "ms"
             ]
         ]

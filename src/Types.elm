@@ -13,7 +13,7 @@ type alias FrontendModel =
     { key : Key
     , message : String
     , fishes : List Fish
-    , coins : List Coin
+    , coinsInPlay : List Coin
     , lastTickTime : Time.Posix
     , deltaTime : Int
     , globalSeed : Random.Seed
