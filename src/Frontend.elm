@@ -53,6 +53,7 @@ init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
       , lastTickTime = Time.millisToPosix 0
+      , deltaTime = 0
       , globalSeed = Random.initialSeed 0
       , fishes =
             [ { initFish | pos = pixels 50 222, id = 1 }
@@ -264,7 +265,7 @@ update msg model =
                 onFirstFrame newModel
 
             else
-                onGameTick newModel deltaTime
+                onGameTick { newModel | deltaTime = deltaTime }
 
         FeedFish fishId ->
             let
@@ -338,7 +339,11 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                         res <= 2
                 in
                 if shouldSpawnCoin then
-                    ( initCoin :: coins, newSeed_ )
+                    let
+                        newCoin =
+                            { initCoin | pos = fish.pos }
+                    in
+                    ( newCoin :: coins, newSeed_ )
 
                 else
                     ( coins, newSeed_ )
@@ -349,12 +354,22 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
     ( { fish | pos = newPos fish.pos } :: fishes, newSeed, newCoins_ )
 
 
+pixelsDown : Float -> Pixel2i -> Pixel2i
+pixelsDown down =
+    Point2d.translateIn Direction2d.y (Pixels.pixels down)
+
+
+pixelsRight : Float -> Pixel2i -> Pixel2i
+pixelsRight right =
+    Point2d.translateIn Direction2d.x (Pixels.pixels right)
+
+
 moveCoin : Coin -> ( List Coin, Random.Seed ) -> ( List Coin, Random.Seed )
 moveCoin coin ( movedCoins, seed ) =
     let
         newPos =
             coin.pos
-                |> Point2d.translateIn Direction2d.y (Pixels.pixels 1)
+                |> pixelsDown 1
                 |> (\np ->
                         let
                             pix =
@@ -370,8 +385,8 @@ moveCoin coin ( movedCoins, seed ) =
     ( { coin | pos = newPos } :: movedCoins, seed )
 
 
-onGameTick : Model -> Int -> ( Model, Cmd Msg )
-onGameTick model deltaTime =
+onGameTick : Model -> ( Model, Cmd Msg )
+onGameTick model =
     let
         ( newFishes, newSeed_, newCoins_ ) =
             List.foldl
@@ -457,5 +472,6 @@ view model =
         , row [ centerX, spacing 10 ] <|
             [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times"
             , el [ Font.size <| round <| scaled 1 ] <| text <| "Coins in play: " ++ (String.fromInt <| List.length model.coins)
+            , el [ Font.size <| round <| scaled 1 ] <| text <| "Frametime: " ++ (String.fromInt <| model.deltaTime) ++ "ms"
             ]
         ]

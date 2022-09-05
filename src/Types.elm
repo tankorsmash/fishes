@@ -15,6 +15,7 @@ type alias FrontendModel =
     , fishes : List Fish
     , coins : List Coin
     , lastTickTime : Time.Posix
+    , deltaTime : Int
     , globalSeed : Random.Seed
     }
 
