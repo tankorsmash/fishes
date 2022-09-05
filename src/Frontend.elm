@@ -200,7 +200,8 @@ viewFish lastTickTime fish =
                         .pos fish
                             |> Point2d.toPixels
                             |> getter
-                            |> String.fromFloat
+                            |> round
+                            |> String.fromInt
                             |> roundNumber
 
                     xPos =
@@ -361,7 +362,7 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
         newPos : Pixel2i -> Random.Seed -> ( Pixel2i, Random.Seed )
         newPos oldPos s =
             oldPos
-                |> pixelsRight 1
+                |> pixelsRight (if isSated then 1.5 else 1)
                 |> moveFishVerticallyIfSated isSated s
                 |> Tuple.mapFirst
                     (\np ->
@@ -369,8 +370,8 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                             pix =
                                 Point2d.toPixels np
                         in
-                        if round pix.x >= aquariumSize.w then
-                            Point2d.fromPixels { pix | x = 0 }
+                        if round pix.x >= (aquariumSize.w - (fishSize.w //2)) then
+                            Point2d.fromPixels { pix | x = toFloat (fishSize.w // 2) }
 
                         else if round pix.y >= aquariumSize.h then
                             Point2d.fromPixels { pix | y = toFloat aquariumSize.h }
