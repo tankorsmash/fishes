@@ -1,5 +1,6 @@
 module Frontend exposing (..)
 
+import NameGen
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Color
