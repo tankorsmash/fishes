@@ -60,6 +60,7 @@ init url key =
             , { initFish | pos = pixels 199 20, id = 2 }
             ]
       , coinsInPlay = []
+      , coinsCollected = 0
       }
     , Cmd.none
     )
@@ -286,7 +287,12 @@ update msg model =
                         (\coin -> coin.id /= coinId)
                         model.coinsInPlay
             in
-            ( { model | coinsInPlay = newCoin }, Cmd.none )
+            ( { model
+                | coinsInPlay = newCoin
+                , coinsCollected = model.coinsCollected + 1
+              }
+            , Cmd.none
+            )
 
 
 onFirstFrame : Model -> ( Model, Cmd Msg )
@@ -538,6 +544,6 @@ view model =
         , viewFishes model.lastTickTime model.fishes model.coinsInPlay
         , viewDebugRow model
         , row [ centerX, spacing 10 ] <|
-            [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times"
+            [ el [ Font.size <| round <| scaled 1 ] <| text <| "Coins collected: " ++ String.fromInt model.coinsCollected
             ]
         ]
