@@ -4,6 +4,7 @@ import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Pixels
 import Point2d
+import Time
 import Url exposing (Url)
 
 
@@ -11,6 +12,7 @@ type alias FrontendModel =
     { key : Key
     , message : String
     , fishes : List Fish
+    , lastTickTime : Time.Posix
     }
 
 
@@ -45,6 +47,7 @@ type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
     | NoOpFrontendMsg
+    | GameTick Time.Posix
 
 
 type ToBackend

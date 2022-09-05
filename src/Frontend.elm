@@ -14,8 +14,10 @@ import Html
 import Html.Attributes
 import Lamdera
 import Point2d exposing (pixels)
+import Time
 import Types exposing (..)
 import Url
+import Vector2d
 
 
 type alias Model =
@@ -33,7 +35,7 @@ app =
         , onUrlChange = UrlChanged
         , update = update
         , updateFromBackend = updateFromBackend
-        , subscriptions = \m -> Sub.none
+        , subscriptions = \model -> Time.every (1000 / 60) GameTick
         , view = viewWrapper
         }
 
@@ -42,9 +44,10 @@ init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
+      , lastTickTime = Time.millisToPosix 0
       , fishes =
             [ { initFish | pos = pixels 50 222 }
-            , { initFish | pos = pixels 299 20 }
+            , { initFish | pos = pixels 199 20 }
             ]
       }
     , Cmd.none
@@ -72,10 +75,10 @@ viewFish fish =
             .pos fish |> Point2d.toPixels
 
         fishX =
-            .x fishPos - (.w fishSize |> toFloat >> (\w -> w / 2))
+            fishPos.x - (.w fishSize |> toFloat >> (\w -> w / 2))
 
         fishY =
-            .y fishPos - (.h fishSize |> toFloat >> (\h -> h / 2))
+            fishPos.y - (.h fishSize |> toFloat >> (\h -> h / 2))
     in
     el
         [ width <| px (.w fishSize)
@@ -98,6 +101,7 @@ viewFishes fishes =
         ([ centerX
          , width <| px <| .w aquariumSize
          , height <| px <| .h aquariumSize
+         , Element.clip
          , Background.color <| rgb255 28 163 236
          ]
             ++ List.map (Element.inFront << viewFish) fishes
@@ -108,6 +112,10 @@ viewFishes fishes =
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
+    let
+        noop =
+            ( model, Cmd.none )
+    in
     case msg of
         UrlClicked urlRequest ->
             case urlRequest of
@@ -126,6 +134,45 @@ update msg model =
 
         NoOpFrontendMsg ->
             ( model, Cmd.none )
+
+        GameTick newTime ->
+            let
+                newModel =
+                    { model | lastTickTime = newTime }
+
+                deltaTime =
+                    Time.posixToMillis newTime - Time.posixToMillis (.lastTickTime model)
+            in
+            -- skip update since we havent gotten a first tick yet (lamdera limitation afaict)
+            if Time.posixToMillis (.lastTickTime model) == 0 then
+                ( newModel, Cmd.none )
+
+            else
+                onGameTick newModel deltaTime
+
+
+onGameTick : Model -> Int -> ( Model, Cmd Msg )
+onGameTick model deltaTime =
+    let
+        moveFish fish =
+            let
+                newPos =
+                    Point2d.translateBy (Vector2d.pixels 2 0) fish.pos
+                        |> (\np ->
+                                let
+                                    pix =
+                                        Point2d.toPixels np
+                                in
+                                if round pix.x >= aquariumSize.w then
+                                    Point2d.fromPixels { pix | x = 0 }
+
+                                else
+                                    np
+                           )
+            in
+            { fish | pos = newPos }
+    in
+    ( { model | fishes = List.map moveFish model.fishes }, Cmd.none )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
