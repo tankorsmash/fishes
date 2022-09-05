@@ -1,5 +1,6 @@
 module Types exposing (..)
 
+import Random
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Pixels
@@ -13,6 +14,7 @@ type alias FrontendModel =
     , message : String
     , fishes : List Fish
     , lastTickTime : Time.Posix
+    , globalSeed : Random.Seed
     }
 
 

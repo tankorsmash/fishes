@@ -17,6 +17,7 @@ import Html.Attributes
 import Lamdera
 import List.Extra
 import Point2d exposing (pixels)
+import Random
 import Time
 import Types exposing (..)
 import Url
@@ -48,6 +49,7 @@ init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
       , lastTickTime = Time.millisToPosix 0
+      , globalSeed = Random.initialSeed 0
       , fishes =
             [ { initFish | pos = pixels 50 222 }
             , { initFish | pos = pixels 199 20, id = 2 }
@@ -105,22 +107,9 @@ viewFish lastTickTime fish =
         fishY =
             fishPos.y - (.h fishSize |> toFloat >> (\h -> h / 2))
 
-        sinceEaten : FishHunger -> Duration.Duration
-        sinceEaten (Sated lastEaten) =
-            (Time.posixToMillis lastTickTime - Time.posixToMillis lastEaten)
-                |> toFloat
-                |> Duration.milliseconds
-
         backgroundColor : Color.Color
         backgroundColor =
-            let
-                secondsSinceEaten =
-                    sinceEaten fish.hunger |> Duration.inSeconds
-
-                secondsLimit =
-                    Duration.seconds 5 |> Duration.inSeconds
-            in
-            if secondsSinceEaten > secondsLimit then
+            if isHungry lastTickTime fish.hunger then
                 Color.red
 
             else
@@ -239,6 +228,25 @@ onFirstFrame model =
                     )
     in
     ( { model | fishes = newFish }, Cmd.none )
+
+
+sinceEaten : Time.Posix -> FishHunger -> Duration.Duration
+sinceEaten lastTickTime (Sated lastEaten) =
+    (Time.posixToMillis lastTickTime - Time.posixToMillis lastEaten)
+        |> toFloat
+        |> Duration.milliseconds
+
+
+isHungry : Time.Posix -> FishHunger -> Bool
+isHungry lastTickTime hunger =
+    let
+        secondsSinceEaten =
+            sinceEaten lastTickTime hunger |> Duration.inSeconds
+
+        secondsLimit =
+            Duration.seconds 5 |> Duration.inSeconds
+    in
+    secondsSinceEaten > secondsLimit
 
 
 onGameTick : Model -> Int -> ( Model, Cmd Msg )
