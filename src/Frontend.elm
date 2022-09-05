@@ -55,7 +55,7 @@ init url key =
       , lastTickTime = Time.millisToPosix 0
       , globalSeed = Random.initialSeed 0
       , fishes =
-            [ { initFish | pos = pixels 50 222 }
+            [ { initFish | pos = pixels 50 222, id = 1 }
             , { initFish | pos = pixels 199 20, id = 2 }
             ]
       , coins = []
@@ -179,7 +179,7 @@ viewFish lastTickTime fish =
         , Events.onClick (FeedFish fish.id)
         , Element.pointer
         , Element.mouseOver
-            [ Background.color
+            [ Background.color <|
                 (backgroundColor
                     |> Color.Manipulate.lighten 0.1
                     |> convertColor
@@ -386,7 +386,7 @@ onGameTick model deltaTime =
                 (model.coins ++ newCoins_)
     in
     ( { model
-        | fishes = newFishes
+        | fishes = List.reverse newFishes
         , globalSeed = newSeed
         , coins = newCoins
       }
