@@ -3,6 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Color
+import Color.Convert
 import Color.Manipulate
 import Direction2d
 import Duration
@@ -618,7 +619,17 @@ viewCommandRow : Model -> Element FrontendMsg
 viewCommandRow model =
     row [ centerX, spacing 10 ] <|
         [ el [ Font.size <| round <| scaled 1 ] <| text <| "Coins collected: " ++ String.fromInt model.coinsCollected
-        , Input.button [ Border.rounded 5, Border.width 2, padding 5 ]
+        , Input.button
+            [ padding 5
+            , Border.rounded 5
+            , Border.width 2
+            , Border.color <| convertColor colors.darkButtonColor
+            , Background.color <| convertColor colors.lightButtonColor
+            , Element.mouseOver
+                [ Background.color <| convertColor colors.highlightButtonColor
+                , Border.color <| convertColor colors.lightButtonColor
+                ]
+            ]
             { onPress = Just BuyFish
             , label = text "Buy Fish"
             }
@@ -635,3 +646,19 @@ view model =
             , viewCommandRow model
             ]
         ]
+
+
+getRawColorFromHex : String -> Color.Color
+getRawColorFromHex hexStr =
+    Color.Convert.hexToColor hexStr
+        |> Result.withDefault (Color.rgb 1 0 1)
+
+
+colors : { buttonColor : Color.Color, darkButtonColor : Color.Color, lightButtonColor : Color.Color, highlightButtonColor : Color.Color, offwhiteButtonColor : Color.Color }
+colors =
+    { darkButtonColor = getRawColorFromHex "#012E4A"
+    , buttonColor = getRawColorFromHex "#036280"
+    , lightButtonColor = getRawColorFromHex "#378BA4"
+    , highlightButtonColor = getRawColorFromHex "#81BECE"
+    , offwhiteButtonColor = getRawColorFromHex "#E8EDE7"
+    }
