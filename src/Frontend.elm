@@ -411,6 +411,28 @@ moveFishVerticallyIfSated isSated seed pos =
         ( pos, seed )
 
 
+constrainFishBounds : Pixel2i -> Pixel2i
+constrainFishBounds fishPos =
+    let
+        pix =
+            Point2d.toPixels fishPos
+    in
+    if round pix.x >= (aquariumSize.w - (fishSize.w // 2)) then
+        -- too far right
+        Point2d.fromPixels { pix | x = toFloat (fishSize.w // 2) }
+
+    else if round pix.y >= aquariumSize.h then
+        -- too far down
+        Point2d.fromPixels { pix | y = toFloat aquariumSize.h }
+
+    else if round pix.y <= (fishSize.w // 2) then
+        -- too far left
+        Point2d.fromPixels { pix | y = toFloat (fishSize.h // 2) }
+
+    else
+        fishPos
+
+
 moveFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List Fish, Random.Seed, List Coin )
 moveFish lastTickTime fish ( fishes, seed, coins ) =
     let
@@ -428,24 +450,7 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                         0.5
                     )
                 |> moveFishVerticallyIfSated isSated s
-                |> Tuple.mapFirst
-                    (\np ->
-                        let
-                            pix =
-                                Point2d.toPixels np
-                        in
-                        if round pix.x >= (aquariumSize.w - (fishSize.w // 2)) then
-                            Point2d.fromPixels { pix | x = toFloat (fishSize.w // 2) }
-
-                        else if round pix.y >= aquariumSize.h then
-                            Point2d.fromPixels { pix | y = toFloat aquariumSize.h }
-
-                        else if round pix.y <= (fishSize.w // 2) then
-                            Point2d.fromPixels { pix | y = toFloat (fishSize.h // 2) }
-
-                        else
-                            np
-                    )
+                |> Tuple.mapFirst constrainFishBounds
 
         ( newCoins_, newSeed ) =
             if isSated then
