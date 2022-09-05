@@ -54,6 +54,7 @@ init url key =
             [ { initFish | pos = pixels 50 222 }
             , { initFish | pos = pixels 199 20, id = 2 }
             ]
+      , coins = []
       }
     , Cmd.none
     )
@@ -93,6 +94,11 @@ colorFromInt int positiveColor neutralColor negativeColor =
 monospace : List (Element.Attribute msg) -> Element msg -> Element msg
 monospace attrs el =
     Element.el (Font.family [ Font.monospace ] :: attrs) el
+
+
+viewCoin : Time.Posix -> Coin -> Element Msg
+viewCoin lastTickTime coin =
+    text "coin"
 
 
 viewFish : Time.Posix -> Fish -> Element Msg
@@ -151,8 +157,8 @@ viewFish lastTickTime fish =
                 xPos ++ ", " ++ yPos
 
 
-viewFishes : Time.Posix -> List Fish -> Element Msg
-viewFishes lastTickTime fishes =
+viewFishes : Time.Posix -> List Fish -> List Coin -> Element Msg
+viewFishes lastTickTime fishes coins =
     column
         ([ centerX
          , width <| px <| .w aquariumSize
@@ -161,6 +167,7 @@ viewFishes lastTickTime fishes =
          , Background.color <| rgb255 28 163 236
          ]
             ++ List.map (Element.inFront << viewFish lastTickTime) fishes
+            ++ List.map (Element.inFront << viewCoin lastTickTime) coins
         )
     <|
         [ text "" ]
@@ -252,10 +259,11 @@ isHungry lastTickTime hunger =
 onGameTick : Model -> Int -> ( Model, Cmd Msg )
 onGameTick model deltaTime =
     let
-        moveFish fish =
+        moveFish : Fish -> ( List Fish, Random.Seed ) -> ( List Fish, Random.Seed )
+        moveFish fish ( fishes, seed ) =
             let
-                newPos =
-                    Point2d.translateBy (Vector2d.pixels 2 0) fish.pos
+                newPos oldPos =
+                    Point2d.translateBy (Vector2d.pixels 2 0) oldPos
                         |> (\np ->
                                 let
                                     pix =
@@ -268,9 +276,17 @@ onGameTick model deltaTime =
                                     np
                            )
             in
-            { fish | pos = newPos }
+            ( { fish | pos = newPos fish.pos } :: fishes, seed )
+
+        ( newFishes, newSeed ) =
+            List.foldl moveFish ( [], model.globalSeed ) model.fishes
     in
-    ( { model | fishes = List.map moveFish model.fishes }, Cmd.none )
+    ( { model
+        | fishes = newFishes
+        , globalSeed = newSeed
+      }
+    , Cmd.none
+    )
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -323,6 +339,7 @@ viewWrapper model =
     }
 
 
+scaled : Int -> Float
 scaled =
     Element.modular 16 1.25
 
@@ -331,7 +348,7 @@ view : Model -> Element FrontendMsg
 view model =
     column [ width fill, height fill ]
         [ el [ centerX ] <| text "Welcome to Fishes"
-        , viewFishes model.lastTickTime model.fishes
+        , viewFishes model.lastTickTime model.fishes model.coins
         , row [ centerX ] <|
             [ el [ Font.size <| round <| scaled 1 ] <| text "Fed XYZ Times" ]
         ]

@@ -13,6 +13,7 @@ type alias FrontendModel =
     { key : Key
     , message : String
     , fishes : List Fish
+    , coins : List Coin
     , lastTickTime : Time.Posix
     , globalSeed : Random.Seed
     }
@@ -36,9 +37,15 @@ type alias Pixel2i =
 type FishHunger
     = Sated Time.Posix
 
+type alias CoinId = Int
+
+type alias Coin =
+    { id : CoinId
+    , pos : Pixel2i
+    }
 
 type alias Fish =
-    { id : Int
+    { id : FishId
     , pos : Pixel2i
     , size : FishSize
     , hunger : FishHunger
