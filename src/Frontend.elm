@@ -310,12 +310,44 @@ isHungry lastTickTime hunger =
     secondsSinceEaten > secondsLimit
 
 
+moveFishVerticallyIfSated : Bool -> Random.Seed -> Pixel2i -> ( Pixel2i, Random.Seed )
+moveFishVerticallyIfSated isSated seed pos =
+    if isSated then
+        Random.step
+            (Random.int 0 1000
+                |> Random.andThen
+                    (\doIt ->
+                        if doIt <= 5 then
+                            Random.int 0 2
+                                |> Random.map (\right -> pixelsRight (toFloat right) pos)
+
+                        else if doIt <= 15 then
+                            Random.int -5 5
+                                |> Random.map (\down -> pixelsDown (toFloat down) pos)
+
+                        else
+                            Random.constant pos
+                    )
+            )
+            seed
+
+    else
+        ( pos, seed )
+
+
 moveFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List Fish, Random.Seed, List Coin )
 moveFish lastTickTime fish ( fishes, seed, coins ) =
     let
-        newPos oldPos =
-            Point2d.translateBy (Vector2d.pixels 1 0) oldPos
-                |> (\np ->
+        isSated =
+            not <| isHungry lastTickTime fish.hunger
+
+        newPos : Pixel2i -> Random.Seed -> ( Pixel2i, Random.Seed )
+        newPos oldPos s =
+            oldPos
+                |> pixelsRight 1
+                |> moveFishVerticallyIfSated isSated s
+                |> Tuple.mapFirst
+                    (\np ->
                         let
                             pix =
                                 Point2d.toPixels np
@@ -325,10 +357,10 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
 
                         else
                             np
-                   )
+                    )
 
         ( newCoins_, newSeed ) =
-            if not <| isHungry lastTickTime fish.hunger then
+            if isSated then
                 let
                     ( res, newSeed_ ) =
                         Random.step
@@ -352,8 +384,11 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
 
             else
                 ( coins, seed )
+
+        ( newestPos, newestSeed ) =
+            newPos fish.pos newSeed
     in
-    ( { fish | pos = newPos fish.pos } :: fishes, newSeed, newCoins_ )
+    ( { fish | pos = newestPos } :: fishes, newestSeed, newCoins_ )
 
 
 pixelsDown : Float -> Pixel2i -> Pixel2i
@@ -377,8 +412,8 @@ moveCoin coin ( movedCoins, seed ) =
                             pix =
                                 Point2d.toPixels np
                         in
-                        if round pix.y >= (aquariumSize.h - coinSize.h//2) then
-                            Point2d.fromPixels { pix | y = toFloat <| aquariumSize.h - coinSize.h //2  }
+                        if round pix.y >= (aquariumSize.h - coinSize.h // 2) then
+                            Point2d.fromPixels { pix | y = toFloat <| aquariumSize.h - coinSize.h // 2 }
 
                         else
                             np
