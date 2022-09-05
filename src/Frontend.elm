@@ -3,6 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Color
+import Duration
 import Element exposing (Color, Element, alignBottom, alignLeft, alignRight, alignTop, centerX, centerY, column, el, explain, fill, fillPortion, height, modular, padding, paddingXY, paragraph, px, rgb, rgb255, row, scrollbars, spacing, spacingXY, text, width)
 import Element.Background as Background
 import Element.Border as Border
@@ -13,6 +14,7 @@ import Element.Lazy as Lazy
 import Html
 import Html.Attributes
 import Lamdera
+import List.Extra
 import Point2d exposing (pixels)
 import Time
 import Types exposing (..)
@@ -47,7 +49,7 @@ init url key =
       , lastTickTime = Time.millisToPosix 0
       , fishes =
             [ { initFish | pos = pixels 50 222 }
-            , { initFish | pos = pixels 199 20 }
+            , { initFish | pos = pixels 199 20, id = 2 }
             ]
       }
     , Cmd.none
@@ -68,8 +70,25 @@ aquariumSize =
     { w = 720, h = 500 }
 
 
-viewFish : Fish -> Element Msg
-viewFish fish =
+convertColor : Color.Color -> Element.Color
+convertColor color =
+    Element.fromRgb <| Color.toRgba <| color
+
+
+colorFromInt : Int -> Color -> Color -> Color -> Color
+colorFromInt int positiveColor neutralColor negativeColor =
+    if int > 0 then
+        positiveColor
+
+    else if int == 0 then
+        neutralColor
+
+    else
+        negativeColor
+
+
+viewFish : Time.Posix -> Fish -> Element Msg
+viewFish lastTickTime fish =
     let
         fishPos =
             .pos fish |> Point2d.toPixels
@@ -79,14 +98,39 @@ viewFish fish =
 
         fishY =
             fishPos.y - (.h fishSize |> toFloat >> (\h -> h / 2))
+
+        sinceEaten : FishHunger -> Duration.Duration
+        sinceEaten (Sated lastEaten) =
+            (Time.posixToMillis lastTickTime - Time.posixToMillis lastEaten)
+                |> toFloat
+                |> Duration.milliseconds
+
+        backgroundColor =
+            let
+                secondsSinceEaten =
+                    sinceEaten fish.hunger |> Duration.inSeconds
+
+                secondsLimit =
+                    Duration.seconds 5 |> Duration.inSeconds
+            in
+            (if secondsSinceEaten > secondsLimit then
+                Color.red
+
+             else
+                Color.green
+            )
+                |> convertColor
+
+        -- rgb 1 0 1
     in
     el
         [ width <| px (.w fishSize)
         , height <| px (.h fishSize)
-        , Background.color <| rgb 1 0 1
+        , Background.color <| backgroundColor
         , Border.rounded <| 10
         , Element.moveRight fishX
         , Element.moveDown fishY
+        , Events.onClick (FeedFish fish.id)
         ]
     <|
         text <|
@@ -95,8 +139,8 @@ viewFish fish =
                 ++ String.fromFloat (.pos fish |> Point2d.toPixels |> .y)
 
 
-viewFishes : List Fish -> Element Msg
-viewFishes fishes =
+viewFishes : Time.Posix -> List Fish -> Element Msg
+viewFishes lastTickTime fishes =
     column
         ([ centerX
          , width <| px <| .w aquariumSize
@@ -104,7 +148,7 @@ viewFishes fishes =
          , Element.clip
          , Background.color <| rgb255 28 163 236
          ]
-            ++ List.map (Element.inFront << viewFish) fishes
+            ++ List.map (Element.inFront << viewFish lastTickTime) fishes
         )
     <|
         [ text "" ]
@@ -145,10 +189,33 @@ update msg model =
             in
             -- skip update since we havent gotten a first tick yet (lamdera limitation afaict)
             if Time.posixToMillis (.lastTickTime model) == 0 then
-                ( newModel, Cmd.none )
+                onFirstFrame newModel
 
             else
                 onGameTick newModel deltaTime
+
+        FeedFish fishId ->
+            let
+                newFish =
+                    List.Extra.updateIf
+                        (\fish -> fish.id == fishId)
+                        (\fish -> { fish | hunger = Sated model.lastTickTime })
+                        model.fishes
+            in
+            ( { model | fishes = newFish }, Cmd.none )
+
+
+onFirstFrame : Model -> ( Model, Cmd Msg )
+onFirstFrame model =
+    let
+        newFish =
+            model.fishes
+                |> List.map
+                    (\fish ->
+                        { fish | hunger = Sated model.lastTickTime }
+                    )
+    in
+    ( { model | fishes = newFish }, Cmd.none )
 
 
 onGameTick : Model -> Int -> ( Model, Cmd Msg )
@@ -229,5 +296,5 @@ view : Model -> Element FrontendMsg
 view model =
     column [ width fill, height fill ]
         [ el [ centerX ] <| text "Welcome to Fishes"
-        , viewFishes model.fishes
+        , viewFishes model.lastTickTime model.fishes
         ]

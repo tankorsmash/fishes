@@ -31,23 +31,35 @@ type alias Pixel2i =
     Point2d.Point2d Pixels.Pixels Int
 
 
+type FishHunger
+    = Sated Time.Posix
+
+
 type alias Fish =
     { id : Int
     , pos : Pixel2i
     , size : FishSize
+    , hunger : FishHunger
     }
 
 
 initFish : Fish
 initFish =
-    { id = 0, pos = Point2d.pixels 0 0, size = SmallFish }
+    { id = 0
+    , pos = Point2d.pixels 0 0
+    , size = SmallFish
+    , hunger = Sated (Time.millisToPosix 0)
+    }
 
+
+type alias FishId = Int
 
 type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
     | NoOpFrontendMsg
     | GameTick Time.Posix
+    | FeedFish FishId
 
 
 type ToBackend

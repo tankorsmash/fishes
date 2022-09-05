@@ -16,6 +16,7 @@
             "elm/random": "1.0.0",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "elm-community/list-extra": "8.6.0",
             "ianmackenzie/elm-float-extra": "1.1.0",
             "lamdera/codecs": "1.0.0",
             "lamdera/core": "1.0.0",
