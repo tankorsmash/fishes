@@ -295,6 +295,57 @@ update msg model =
             , Cmd.none
             )
 
+        BuyFish ->
+            let
+                _ =
+                    123
+            in
+            ( if canAffordBuyingFish model.coinsCollected then
+                let
+                    ( newFish, newSeed ) =
+                        Random.step generateFish model.globalSeed
+                in
+                { model
+                    | coinsCollected = model.coinsCollected - priceOfFish
+                    , fishes = newFish :: model.fishes
+                    , globalSeed = newSeed
+                }
+
+              else
+                model
+            , Cmd.none
+            )
+
+
+generateFishId : Random.Generator Int
+generateFishId =
+    Random.int 0 100000000
+
+
+generateFishPos : Random.Generator Pixel2i
+generateFishPos =
+    Random.map2
+        (\xi yi ->
+            pixels (toFloat xi) (toFloat yi)
+        )
+        (Random.int 0 aquariumSize.w)
+        (Random.int 0 aquariumSize.h)
+
+
+generateFish : Random.Generator Fish
+generateFish =
+    Random.map2 (\id pos -> { initFish | id = id, pos = pos })
+        generateFishId
+        generateFishPos
+
+
+priceOfFish =
+    5
+
+
+canAffordBuyingFish coinsCollected =
+    coinsCollected >= priceOfFish
+
 
 onFirstFrame : Model -> ( Model, Cmd Msg )
 onFirstFrame model =
@@ -362,7 +413,13 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
         newPos : Pixel2i -> Random.Seed -> ( Pixel2i, Random.Seed )
         newPos oldPos s =
             oldPos
-                |> pixelsRight (if isSated then 1.5 else 1)
+                |> pixelsRight
+                    (if isSated then
+                        1.5
+
+                     else
+                        1
+                    )
                 |> moveFishVerticallyIfSated isSated s
                 |> Tuple.mapFirst
                     (\np ->
@@ -370,13 +427,13 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                             pix =
                                 Point2d.toPixels np
                         in
-                        if round pix.x >= (aquariumSize.w - (fishSize.w //2)) then
+                        if round pix.x >= (aquariumSize.w - (fishSize.w // 2)) then
                             Point2d.fromPixels { pix | x = toFloat (fishSize.w // 2) }
 
                         else if round pix.y >= aquariumSize.h then
                             Point2d.fromPixels { pix | y = toFloat aquariumSize.h }
 
-                        else if round pix.y < 0 then
+                        else if round pix.y <= (fishSize.w // 2) then
                             Point2d.fromPixels { pix | y = toFloat (fishSize.h // 2) }
 
                         else
@@ -538,13 +595,23 @@ viewDebugRow model =
         ]
 
 
+viewCommandRow model =
+    row [ centerX, spacing 10 ] <|
+        [ el [ Font.size <| round <| scaled 1 ] <| text <| "Coins collected: " ++ String.fromInt model.coinsCollected
+        , Input.button [ Border.rounded 5, Border.width 2, padding 5 ]
+            { onPress = Just BuyFish
+            , label = text "Buy Fish"
+            }
+        ]
+
+
 view : Model -> Element FrontendMsg
 view model =
     column [ width fill, height fill ]
         [ el [ centerX ] <| text "Welcome to Fishes"
         , viewFishes model.lastTickTime model.fishes model.coinsInPlay
-        , viewDebugRow model
-        , row [ centerX, spacing 10 ] <|
-            [ el [ Font.size <| round <| scaled 1 ] <| text <| "Coins collected: " ++ String.fromInt model.coinsCollected
+        , column [ width fill, height fill, spacing 10 ]
+            [ viewDebugRow model
+            , viewCommandRow model
             ]
         ]
