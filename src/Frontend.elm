@@ -365,6 +365,12 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                         if round pix.x >= aquariumSize.w then
                             Point2d.fromPixels { pix | x = 0 }
 
+                        else if round pix.y >= aquariumSize.h then
+                            Point2d.fromPixels { pix | y = toFloat aquariumSize.h }
+
+                        else if round pix.y < 0 then
+                            Point2d.fromPixels { pix | y = toFloat (fishSize.h // 2) }
+
                         else
                             np
                     )
