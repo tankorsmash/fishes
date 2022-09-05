@@ -2,9 +2,9 @@ module Types exposing (..)
 
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
+import Pixels
 import Point2d
 import Url exposing (Url)
-import Pixels
 
 
 type alias FrontendModel =
@@ -19,12 +19,26 @@ type alias BackendModel =
     }
 
 
-type alias Pixel2i = Point2d.Point2d Pixels.Pixels Int
+type FishSize
+    = SmallFish
+    | MedFish
+    | LargeFish
+
+
+type alias Pixel2i =
+    Point2d.Point2d Pixels.Pixels Int
+
 
 type alias Fish =
     { id : Int
     , pos : Pixel2i
+    , size : FishSize
     }
+
+
+initFish : Fish
+initFish =
+    { id = 0, pos = Point2d.pixels 0 0, size = SmallFish }
 
 
 type FrontendMsg

@@ -2,7 +2,8 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Element exposing (Color, Element, alignBottom, alignLeft, alignRight, alignTop, centerX, centerY, column, el, explain, fill, fillPortion, height, modular, padding, paddingXY, paragraph, rgb, rgb255, row, scrollbars, spacing, spacingXY, text, width)
+import Color
+import Element exposing (Color, Element, alignBottom, alignLeft, alignRight, alignTop, centerX, centerY, column, el, explain, fill, fillPortion, height, modular, padding, paddingXY, paragraph, px, rgb, rgb255, row, scrollbars, spacing, spacingXY, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
@@ -12,7 +13,7 @@ import Element.Lazy as Lazy
 import Html
 import Html.Attributes
 import Lamdera
-import Point2d
+import Point2d exposing (pixels)
 import Types exposing (..)
 import Url
 
@@ -42,26 +43,67 @@ init url key =
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
       , fishes =
-            [ { id = 0, pos = Point2d.pixels 10 0 }
-            , { id = 1, pos = Point2d.pixels 40 100 }
+            [ { initFish | pos = pixels 50 222 }
+            , { initFish | pos = pixels 299 20 }
             ]
       }
     , Cmd.none
     )
 
 
+type alias Size =
+    { w : Int, h : Int }
+
+
+fishSize : Size
+fishSize =
+    { w = 70, h = 20 }
+
+
+aquariumSize : Size
+aquariumSize =
+    { w = 720, h = 500 }
+
+
 viewFish : Fish -> Element Msg
 viewFish fish =
-    text <|
-        String.fromFloat (.pos fish |> Point2d.toPixels |> .x)
-            ++ ", "
-            ++ String.fromFloat (.pos fish |> Point2d.toPixels |> .y)
+    let
+        fishPos =
+            .pos fish |> Point2d.toPixels
+
+        fishX =
+            .x fishPos - (.w fishSize |> toFloat >> (\w -> w / 2))
+
+        fishY =
+            .y fishPos - (.h fishSize |> toFloat >> (\h -> h / 2))
+    in
+    el
+        [ width <| px (.w fishSize)
+        , height <| px (.h fishSize)
+        , Background.color <| rgb 1 0 1
+        , Border.rounded <| 10
+        , Element.moveRight fishX
+        , Element.moveDown fishY
+        ]
+    <|
+        text <|
+            String.fromFloat (.pos fish |> Point2d.toPixels |> .x)
+                ++ ", "
+                ++ String.fromFloat (.pos fish |> Point2d.toPixels |> .y)
 
 
 viewFishes : List Fish -> Element Msg
 viewFishes fishes =
-    column [] <|
-        List.map viewFish fishes
+    column
+        ([ centerX
+         , width <| px <| .w aquariumSize
+         , height <| px <| .h aquariumSize
+         , Background.color <| rgb255 28 163 236
+         ]
+            ++ List.map (Element.inFront << viewFish) fishes
+        )
+    <|
+        [ text "" ]
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
