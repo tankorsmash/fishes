@@ -178,7 +178,13 @@ viewFish lastTickTime fish =
         , Element.moveDown fishY
         , Events.onClick (FeedFish fish.id)
         , Element.pointer
-        , Element.mouseOver [ Background.color (backgroundColor |> Color.Manipulate.lighten 0.1 |> convertColor) ]
+        , Element.mouseOver
+            [ Background.color
+                (backgroundColor
+                    |> Color.Manipulate.lighten 0.1
+                    |> convertColor
+                )
+            ]
         , noUserSelect
         ]
     <|
@@ -307,7 +313,7 @@ moveFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List
 moveFish lastTickTime fish ( fishes, seed, coins ) =
     let
         newPos oldPos =
-            Point2d.translateBy (Vector2d.pixels 2 0) oldPos
+            Point2d.translateBy (Vector2d.pixels 1 0) oldPos
                 |> (\np ->
                         let
                             pix =
