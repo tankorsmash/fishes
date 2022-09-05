@@ -104,6 +104,7 @@ monospace : List (Element.Attribute msg) -> Element msg -> Element msg
 monospace attrs el =
     Element.el (Font.family [ Font.monospace ] :: attrs) el
 
+
 noUserSelect : Element.Attribute msg
 noUserSelect =
     Html.Attributes.style "userSelect" "none" |> Element.htmlAttribute
@@ -319,12 +320,25 @@ moveFish lastTickTime fish ( fishes, seed, coins ) =
                             np
                    )
 
-        (newCoins_, newSeed) =
-            if isHungry lastTickTime fish.hunger then
-                (coins, seed)
+        ( newCoins_, newSeed ) =
+            if not <| isHungry lastTickTime fish.hunger then
+                let
+                    ( res, newSeed_ ) =
+                        Random.step
+                            (Random.int 0 600)
+                            seed
+
+                    shouldSpawnCoin =
+                        res <= 2
+                in
+                if shouldSpawnCoin then
+                    ( initCoin :: coins, newSeed_ )
+
+                else
+                    ( coins, newSeed_ )
 
             else
-                (initCoin :: coins, seed)
+                ( coins, seed )
     in
     ( { fish | pos = newPos fish.pos } :: fishes, newSeed, newCoins_ )
 
