@@ -1,4 +1,4 @@
-module NameGenSymbols exposing (..)
+module NameGen.NameGenSymbols exposing (..)
 
 import Dict
 
