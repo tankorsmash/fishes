@@ -300,7 +300,10 @@ viewFish lastTickTime fish =
         , Element.moveRight fishX
         , Element.moveDown fishY
         , Events.onClick <|
-            if isHungry then
+            if hungerStatus == Starved then
+                RemoveDeadFish fish.id
+
+            else if isHungry then
                 FeedFish fish.id
 
             else
@@ -397,6 +400,15 @@ update msg model =
                         model.fishes
             in
             ( { model | fishes = newFish }, Cmd.none )
+
+        RemoveDeadFish fishId ->
+            let
+                newFish =
+                    List.filter
+                        (\fish -> fish.id /= fishId)
+                        model.fishes
+            in
+            ( { model | fishes = newFish, coinsCollected = model.coinsCollected + 5 }, Cmd.none )
 
         CollectCoin coinId ->
             let

@@ -79,6 +79,7 @@ type FrontendMsg
     | NoOpFrontendMsg
     | GameTick Time.Posix
     | FeedFish FishId
+    | RemoveDeadFish FishId
     | CollectCoin FishId
     | BuyFish
     | TogglePause
