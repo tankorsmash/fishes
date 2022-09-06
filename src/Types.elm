@@ -11,7 +11,7 @@ import Url exposing (Url)
 
 type alias FrontendModel =
     { key : Key
-    , message : String
+    , isPaused : Bool
     , fishes : List Fish
     , coinsInPlay : List Coin
     , coinsCollected : Int
@@ -81,6 +81,7 @@ type FrontendMsg
     | FeedFish FishId
     | CollectCoin FishId
     | BuyFish
+    | TogglePause
 
 
 type ToBackend

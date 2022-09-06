@@ -44,7 +44,13 @@ app =
         , onUrlChange = UrlChanged
         , update = update
         , updateFromBackend = updateFromBackend
-        , subscriptions = \model -> Time.every (1000 / 60) GameTick
+        , subscriptions =
+            \model ->
+                if model.isPaused then
+                    Sub.none
+
+                else
+                    Time.every (1000 / 60) GameTick
         , view = viewWrapper
         }
 
@@ -56,7 +62,7 @@ init url key =
             Time.millisToPosix 0
     in
     ( { key = key
-      , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
+      , isPaused = False
       , lastTickTime = firstTickTime
       , deltaTime = 0
       , globalSeed = Random.initialSeed 0
@@ -379,6 +385,9 @@ update msg model =
                 model
             , Cmd.none
             )
+
+        TogglePause ->
+            ( { model | isPaused = not model.isPaused }, Cmd.none )
 
 
 generateCoinId : Random.Generator Int
@@ -818,6 +827,26 @@ viewCommandRow model =
             ]
             { onPress = Just BuyFish
             , label = text "Buy Fish"
+            }
+        , Input.button
+            [ padding 5
+            , Border.rounded 5
+            , Border.width 2
+            , Border.color <| convertColor colors.darkButtonColor
+            , Background.color <| convertColor colors.lightButtonColor
+            , Element.mouseOver
+                [ Background.color <| convertColor colors.highlightButtonColor
+                , Border.color <| convertColor colors.lightButtonColor
+                ]
+            ]
+            { onPress = Just TogglePause
+            , label =
+                text <|
+                    if model.isPaused then
+                        "Resume"
+
+                    else
+                        "Pause Anims"
             }
         ]
 
