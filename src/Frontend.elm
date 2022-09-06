@@ -173,8 +173,11 @@ viewFish lastTickTime fish =
         backgroundColor : Color.Color
         backgroundColor =
             case hungerStatus of
+                Starved ->
+                    Color.rgb255 0x0A 0x0A 0x0A
+
                 Starving ->
-                    Color.Manipulate.darken 0.5 Color.red
+                    Color.Manipulate.darken 0.35 Color.red
 
                 VeryHungry ->
                     Color.Manipulate.darken 0.25 Color.red
@@ -387,6 +390,7 @@ type HungerStatus
     | Hungry
     | VeryHungry
     | Starving
+    | Starved --aka dead
 
 
 isHungry : Time.Posix -> FishHunger -> Bool
@@ -412,7 +416,10 @@ getHungerStatus lastTickTime hunger =
         secondsSinceEaten =
             sinceEaten lastTickTime hunger |> Duration.inSeconds
     in
-    if secondsSinceEaten >= sec 25 then
+    if secondsSinceEaten >= sec 30 then
+        Starved
+
+    else if secondsSinceEaten >= sec 25 then
         Starving
 
     else if secondsSinceEaten >= sec 15 then
@@ -450,6 +457,21 @@ moveFish hungerStatus seed pos =
             )
             seed
 
+    else if hungerStatus == Starving then
+        Random.step
+            (Random.int 0 10
+                |> Random.andThen
+                    (\doIt ->
+                        if doIt <= 9 then
+                            Random.map (\down -> pixelsDown (toFloat down) pos)
+                                (Random.int 0 3)
+
+                        else
+                            Random.constant pos
+                    )
+            )
+            seed
+
     else
         ( pos, seed )
 
@@ -464,11 +486,11 @@ constrainFishBounds fishPos =
         -- too far right
         Point2d.fromPixels { pix | x = toFloat (fishSize.w // 2) }
 
-    else if round pix.y >= aquariumSize.h then
+    else if round pix.y >= (aquariumSize.h - (fishSize.h // 2)) then
         -- too far down
-        Point2d.fromPixels { pix | y = toFloat aquariumSize.h }
+        Point2d.fromPixels { pix | y = toFloat (aquariumSize.h - (fishSize.h // 2)) }
 
-    else if round pix.y <= (fishSize.w // 2) then
+    else if round pix.y <= (fishSize.h // 2) then
         -- too far left
         Point2d.fromPixels { pix | y = toFloat (fishSize.h // 2) }
 
@@ -490,6 +512,9 @@ updateFish lastTickTime fish ( fishes, seed, coins ) =
             oldPos
                 |> pixelsRight
                     (case hungerStatus of
+                        Starved ->
+                            0.0
+
                         Starving ->
                             0.5
 
