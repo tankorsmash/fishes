@@ -228,7 +228,7 @@ viewFishEye backgroundColor hungerStatus =
         eyelid =
             case hungerStatus of
                 NotHungry ->
-                    [ topEyelid 2 0 , bottomEyelid 3 0 ]
+                    [ topEyelid 2 0, bottomEyelid 3 0 ]
 
                 VeryHungry ->
                     [ topEyelid 2 0 ]
@@ -271,8 +271,8 @@ viewFish lastTickTime fish =
         hungerStatus =
             getHungerStatus lastTickTime fish.hunger
 
-        isNotHungry =
-            hungerStatus == NotHungry
+        isHungry =
+            hungerStatus /= NotHungry
 
         backgroundColor : Color.Color
         backgroundColor =
@@ -300,18 +300,18 @@ viewFish lastTickTime fish =
         , Element.moveRight fishX
         , Element.moveDown fishY
         , Events.onClick <|
-            if not isNotHungry then
+            if isHungry then
                 FeedFish fish.id
 
             else
                 NoOpFrontendMsg
-        , if not isNotHungry then
+        , if isHungry then
             Element.pointer
 
           else
             noopAttr
         , Element.mouseOver <|
-            if not isNotHungry then
+            if isHungry then
                 [ Background.color <|
                     (backgroundColor
                         |> Color.Manipulate.lighten 0.1
@@ -510,18 +510,6 @@ type HungerStatus
     | VeryHungry
     | Starving
     | Starved --aka dead
-
-
-isHungry : Time.Posix -> FishHunger -> Bool
-isHungry lastTickTime hunger =
-    let
-        secondsSinceEaten =
-            sinceEaten lastTickTime hunger |> Duration.inSeconds
-
-        secondsLimit =
-            Duration.seconds 5 |> Duration.inSeconds
-    in
-    secondsSinceEaten > secondsLimit
 
 
 sec : Float -> Float
