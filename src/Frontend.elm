@@ -425,8 +425,12 @@ getHungerStatus lastTickTime hunger =
         NotHungry
 
 
-moveFishVerticallyIfSated : Bool -> Random.Seed -> Pixel2i -> ( Pixel2i, Random.Seed )
-moveFishVerticallyIfSated isSated seed pos =
+moveFish : HungerStatus -> Random.Seed -> Pixel2i -> ( Pixel2i, Random.Seed )
+moveFish hungerStatus seed pos =
+    let
+        isSated =
+            hungerStatus == NotHungry
+    in
     if isSated then
         Random.step
             (Random.int 0 1000
@@ -498,7 +502,7 @@ updateFish lastTickTime fish ( fishes, seed, coins ) =
                         NotHungry ->
                             2.5
                     )
-                |> moveFishVerticallyIfSated isSated s
+                |> moveFish hungerStatus s
                 |> Tuple.mapFirst constrainFishBounds
 
         ( newCoins_, newSeed ) =
