@@ -166,9 +166,12 @@ viewCoin coin =
         )
 
 
-viewFishEye : Bool -> Color.Color -> HungerStatus -> Element Msg
-viewFishEye isAlive backgroundColor hungerStatus =
+viewFishEye : Color.Color -> HungerStatus -> Element Msg
+viewFishEye backgroundColor hungerStatus =
     let
+        isAlive =
+            hungerStatus /= Starved
+
         iris =
             if isAlive then
                 el
@@ -201,7 +204,7 @@ viewFishEye isAlive backgroundColor hungerStatus =
                 el
                     [ width fill
                     , height <| px thickness
-                    , Background.color <| convertColor backgroundColor
+                    , Background.color <| convertColor <| Color.Manipulate.darken 0.01 backgroundColor
                     , alignTop
                     , Border.rounded 3
                     , Element.moveUp up
@@ -214,8 +217,8 @@ viewFishEye isAlive backgroundColor hungerStatus =
                 el
                     [ width fill
                     , height <| px thickness
-                    , Background.color <| convertColor backgroundColor
-                    , alignTop
+                    , Background.color <| convertColor <| Color.Manipulate.lighten 0.01 backgroundColor
+                    , alignBottom
                     , Border.rounded 3
                     , Element.moveUp up
                     ]
@@ -225,7 +228,7 @@ viewFishEye isAlive backgroundColor hungerStatus =
         eyelid =
             case hungerStatus of
                 NotHungry ->
-                    [ bottomEyelid 3 0 ]
+                    [ topEyelid 2 0 , bottomEyelid 3 0 ]
 
                 VeryHungry ->
                     [ topEyelid 2 0 ]
@@ -320,7 +323,7 @@ viewFish lastTickTime fish =
                 []
         , noUserSelect
         , Element.inFront <|
-            viewFishEye (hungerStatus /= Starved) backgroundColor hungerStatus
+            viewFishEye backgroundColor hungerStatus
         ]
     <|
         ( String.fromInt fish.id
