@@ -176,10 +176,6 @@ viewFish lastTickTime fish =
 
                 NotHungry ->
                     Color.Manipulate.darken 0.0 Color.green
-
-        roundNumber : String -> String
-        roundNumber str =
-            String.padLeft 3 '0' str
     in
     Keyed.el
         [ width <| px (.w fishSize)
