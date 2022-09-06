@@ -507,6 +507,21 @@ moveFish hungerStatus seed pos =
             )
             seed
 
+    else if hungerStatus == Starved then
+        Random.step
+            (Random.int 0 10
+                |> Random.andThen
+                    (\doIt ->
+                        if doIt <= 9 then
+                            Random.map (\down -> pixelsDown (toFloat down) pos)
+                                (Random.int 0 2)
+
+                        else
+                            Random.constant pos
+                    )
+            )
+            seed
+
     else
         ( pos, seed )
 
