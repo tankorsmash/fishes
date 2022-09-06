@@ -55,12 +55,12 @@ type alias Fish =
     }
 
 
-initFish : Fish
-initFish =
+initFish : Time.Posix -> Fish
+initFish lastTickTime =
     { id = 0
     , pos = Point2d.pixels 0 0
     , size = SmallFish
-    , hunger = Sated (Time.millisToPosix 0)
+    , hunger = Sated lastTickTime
     }
 
 initCoin : Time.Posix -> Coin

@@ -51,14 +51,21 @@ app =
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
+    let
+        firstTickTime = Time.millisToPosix 0
+    in
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
-      , lastTickTime = Time.millisToPosix 0
+      , lastTickTime = firstTickTime
       , deltaTime = 0
       , globalSeed = Random.initialSeed 0
       , fishes =
-            [ { initFish | pos = pixels 50 222, id = 1 }
-            , { initFish | pos = pixels 199 20, id = 2 }
+            let
+                newFish =
+                    initFish firstTickTime
+            in
+            [ { newFish | pos = pixels 50 222, id = 1 }
+            , { newFish | pos = pixels 199 20, id = 2 }
             ]
       , coinsInPlay = []
       , coinsCollected = 0
@@ -314,7 +321,7 @@ update msg model =
             ( if canAffordBuyingFish model.coinsCollected then
                 let
                     ( newFish, newSeed ) =
-                        Random.step generateFish model.globalSeed
+                        Random.step (generateFish model.lastTickTime) model.globalSeed
                 in
                 { model
                     | coinsCollected = model.coinsCollected - priceOfFish
@@ -348,9 +355,19 @@ generateFishPos =
         (Random.int 0 aquariumSize.h)
 
 
-generateFish : Random.Generator Fish
-generateFish =
-    Random.map2 (\id pos -> { initFish | id = id, pos = pos })
+generateFish : Time.Posix -> Random.Generator Fish
+generateFish lastTickTime =
+    let
+        newFish =
+            initFish lastTickTime
+    in
+    Random.map2
+        (\id pos ->
+            { newFish
+                | id = id
+                , pos = pos
+            }
+        )
         generateFishId
         generateFishPos
 
