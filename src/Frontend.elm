@@ -684,11 +684,15 @@ viewCommandRow model =
 view : Model -> Element FrontendMsg
 view model =
     column [ width fill, height fill ]
-        [ el [ centerX ] <| text "Welcome to Fishes"
+        [ paragraph [ centerX, width fill, Font.center, padding 10 ]
+            [ text "Welcome to "
+            , el [ Font.underline, Font.bold ] <| text "Fishes"
+            , text "!"
+            ]
         , viewFishes model.lastTickTime model.fishes model.coinsInPlay
         , column [ width fill, height fill, spacing 10 ]
-            [ viewDebugRow model
-            , viewCommandRow model
+            [ viewCommandRow model
+            , viewDebugRow model
             ]
         ]
 
