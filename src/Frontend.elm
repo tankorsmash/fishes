@@ -196,57 +196,43 @@ viewFishEye isAlive backgroundColor hungerStatus =
                 <|
                     text "x"
 
+        topEyelid thickness up =
+            Element.inFront <|
+                el
+                    [ width fill
+                    , height <| px thickness
+                    , Background.color <| convertColor backgroundColor
+                    , alignTop
+                    , Border.rounded 3
+                    , Element.moveUp up
+                    ]
+                <|
+                    text ""
+
+        bottomEyelid thickness up =
+            Element.inFront <|
+                el
+                    [ width fill
+                    , height <| px thickness
+                    , Background.color <| convertColor backgroundColor
+                    , alignTop
+                    , Border.rounded 3
+                    , Element.moveUp up
+                    ]
+                <|
+                    text ""
+
         eyelid =
             case hungerStatus of
                 NotHungry ->
-                    [ Element.inFront <|
-                        el
-                            [ width fill
-                            , height <| px 3
-                            , Background.color <| convertColor backgroundColor
-                            , alignBottom
-                            , Border.rounded 3
-                            ]
-                        <|
-                            text ""
-                    ]
+                    [ bottomEyelid 3 0 ]
 
                 VeryHungry ->
-                    [ Element.inFront <|
-                        el
-                            [ width fill
-                            , height <| px 2
-                            , Background.color <| convertColor backgroundColor
-                            , alignTop
-                            , Border.rounded 3
-                            ]
-                        <|
-                            text ""
-                    ]
+                    [ topEyelid 2 0 ]
 
                 Starving ->
-                    [ Element.inFront <|
-                        el
-                            [ width fill
-                            , height <| px 6
-                            , Background.color <| convertColor backgroundColor
-                            , alignTop
-                            , Border.rounded 2
-                            , Element.moveUp 1
-                            ]
-                        <|
-                            text ""
-                    , Element.inFront <|
-                        el
-                            [ width fill
-                            , height <| px 6
-                            , Background.color <| convertColor backgroundColor
-                            , alignBottom
-                            , Border.rounded 2
-                            , Element.moveUp -1
-                            ]
-                        <|
-                            text ""
+                    [ topEyelid 6 2
+                    , bottomEyelid 6 -1
                     ]
 
                 _ ->
