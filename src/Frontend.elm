@@ -638,7 +638,6 @@ viewDebugRow : Model -> Element msg
 viewDebugRow model =
     row [ centerX, spacing 10, Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 } ] <|
         [ el [ Font.size <| round <| scaled 2, centerY ] <| text "Debug: "
-        , el [ Font.size <| round <| scaled 1, centerY ] <| text "Fed XYZ Times"
         , el [ Font.size <| round <| scaled 1, centerY ] <| text <| "Coins in play: " ++ (String.fromInt <| List.length model.coinsInPlay)
         , el [ Font.size <| round <| scaled 1, centerY ] <| text <| "Frametime: " ++ (String.fromInt <| model.deltaTime) ++ "ms"
         ]
