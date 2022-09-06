@@ -159,13 +159,23 @@ viewFish lastTickTime fish =
         fishY =
             fishPos.y - (.h fishSize |> toFloat >> (\h -> h / 2))
 
+        hungerStatus =
+            getHungerStatus lastTickTime fish.hunger
+
         backgroundColor : Color.Color
         backgroundColor =
-            if isHungry lastTickTime fish.hunger then
-                Color.red
+            case hungerStatus of
+                Starving ->
+                    Color.Manipulate.darken 0.5 Color.red
 
-            else
-                Color.green
+                VeryHungry ->
+                    Color.Manipulate.darken 0.25 Color.red
+
+                Hungry ->
+                    Color.Manipulate.darken 0.2 Color.green
+
+                NotHungry ->
+                    Color.Manipulate.darken 0.0 Color.green
 
         roundNumber : String -> String
         roundNumber str =
@@ -355,6 +365,13 @@ sinceEaten lastTickTime (Sated lastEaten) =
         |> Duration.milliseconds
 
 
+type HungerStatus
+    = NotHungry
+    | Hungry
+    | VeryHungry
+    | Starving
+
+
 isHungry : Time.Posix -> FishHunger -> Bool
 isHungry lastTickTime hunger =
     let
@@ -365,6 +382,28 @@ isHungry lastTickTime hunger =
             Duration.seconds 5 |> Duration.inSeconds
     in
     secondsSinceEaten > secondsLimit
+
+
+getHungerStatus : Time.Posix -> FishHunger -> HungerStatus
+getHungerStatus lastTickTime hunger =
+    let
+        secondsSinceEaten =
+            sinceEaten lastTickTime hunger |> Duration.inSeconds
+
+        sec n =
+            Duration.seconds n |> Duration.inSeconds
+    in
+    if secondsSinceEaten >= sec 25 then
+        Starving
+
+    else if secondsSinceEaten >= sec 15 then
+        VeryHungry
+
+    else if secondsSinceEaten >= sec 10 then
+        Hungry
+
+    else
+        NotHungry
 
 
 moveFishVerticallyIfSated : Bool -> Random.Seed -> Pixel2i -> ( Pixel2i, Random.Seed )
@@ -417,18 +456,28 @@ constrainFishBounds fishPos =
 updateFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List Fish, Random.Seed, List Coin )
 updateFish lastTickTime fish ( fishes, seed, coins ) =
     let
+        hungerStatus =
+            getHungerStatus lastTickTime fish.hunger
+
         isSated =
-            not <| isHungry lastTickTime fish.hunger
+            hungerStatus == NotHungry
 
         newPos : Pixel2i -> Random.Seed -> ( Pixel2i, Random.Seed )
         newPos oldPos s =
             oldPos
                 |> pixelsRight
-                    (if isSated then
-                        1.5
+                    (case hungerStatus of
+                        Starving ->
+                            0.5
 
-                     else
-                        0.5
+                        VeryHungry ->
+                            0.85
+
+                        Hungry ->
+                            1.5
+
+                        NotHungry ->
+                            2.5
                     )
                 |> moveFishVerticallyIfSated isSated s
                 |> Tuple.mapFirst constrainFishBounds
