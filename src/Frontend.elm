@@ -113,6 +113,11 @@ noUserSelect =
     Html.Attributes.style "userSelect" "none" |> Element.htmlAttribute
 
 
+noopAttr : Element.Attribute msg
+noopAttr =
+    Html.Attributes.style "" "" |> Element.htmlAttribute
+
+
 viewCoin : Coin -> Element Msg
 viewCoin coin =
     let
@@ -162,6 +167,9 @@ viewFish lastTickTime fish =
         hungerStatus =
             getHungerStatus lastTickTime fish.hunger
 
+        isNotHungry =
+            hungerStatus == NotHungry
+
         backgroundColor : Color.Color
         backgroundColor =
             case hungerStatus of
@@ -184,15 +192,28 @@ viewFish lastTickTime fish =
         , Border.rounded <| 10
         , Element.moveRight fishX
         , Element.moveDown fishY
-        , Events.onClick (FeedFish fish.id)
-        , Element.pointer
-        , Element.mouseOver
-            [ Background.color <|
-                (backgroundColor
-                    |> Color.Manipulate.lighten 0.1
-                    |> convertColor
-                )
-            ]
+        , Events.onClick <|
+            if not isNotHungry then
+                FeedFish fish.id
+
+            else
+                NoOpFrontendMsg
+        , if not isNotHungry then
+            Element.pointer
+
+          else
+            noopAttr
+        , Element.mouseOver <|
+            if not isNotHungry then
+                [ Background.color <|
+                    (backgroundColor
+                        |> Color.Manipulate.lighten 0.1
+                        |> convertColor
+                    )
+                ]
+
+            else
+                []
         , noUserSelect
         ]
     <|
