@@ -166,8 +166,8 @@ viewCoin coin =
         )
 
 
-viewFishEye : Bool -> Element Msg
-viewFishEye isAlive =
+viewFishEye : Bool -> Color.Color -> HungerStatus -> Element Msg
+viewFishEye isAlive backgroundColor hungerStatus =
     let
         iris =
             if isAlive then
@@ -195,16 +195,74 @@ viewFishEye isAlive =
                     ]
                 <|
                     text "x"
+
+        eyelid =
+            case hungerStatus of
+                NotHungry ->
+                    [ Element.inFront <|
+                        el
+                            [ width fill
+                            , height <| px 3
+                            , Background.color <| convertColor backgroundColor
+                            , alignBottom
+                            , Border.rounded 3
+                            ]
+                        <|
+                            text ""
+                    ]
+
+                VeryHungry ->
+                    [ Element.inFront <|
+                        el
+                            [ width fill
+                            , height <| px 2
+                            , Background.color <| convertColor backgroundColor
+                            , alignTop
+                            , Border.rounded 3
+                            ]
+                        <|
+                            text ""
+                    ]
+
+                Starving ->
+                    [ Element.inFront <|
+                        el
+                            [ width fill
+                            , height <| px 6
+                            , Background.color <| convertColor backgroundColor
+                            , alignTop
+                            , Border.rounded 2
+                            , Element.moveUp 1
+                            ]
+                        <|
+                            text ""
+                    , Element.inFront <|
+                        el
+                            [ width fill
+                            , height <| px 6
+                            , Background.color <| convertColor backgroundColor
+                            , alignBottom
+                            , Border.rounded 2
+                            , Element.moveUp -1
+                            ]
+                        <|
+                            text ""
+                    ]
+
+                _ ->
+                    []
     in
     el
-        [ width <| px 15
-        , height <| px 15
-        , Border.rounded 5
-        , Background.color <| convertColor Color.white
-        , alignRight
-        , Element.moveDown 5
-        , Element.inFront iris
-        ]
+        ([ width <| px 15
+         , height <| px 15
+         , Border.rounded 5
+         , Background.color <| convertColor Color.white
+         , alignRight
+         , Element.moveDown 5
+         , Element.inFront iris
+         ]
+            ++ eyelid
+        )
     <|
         text ""
 
@@ -276,7 +334,7 @@ viewFish lastTickTime fish =
                 []
         , noUserSelect
         , Element.inFront <|
-            viewFishEye (hungerStatus /= Starved)
+            viewFishEye (hungerStatus /= Starved) backgroundColor hungerStatus
         ]
     <|
         ( String.fromInt fish.id
