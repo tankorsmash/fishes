@@ -401,14 +401,16 @@ isHungry lastTickTime hunger =
     secondsSinceEaten > secondsLimit
 
 
+sec : Float -> Float
+sec n =
+    Duration.seconds n |> Duration.inSeconds
+
+
 getHungerStatus : Time.Posix -> FishHunger -> HungerStatus
 getHungerStatus lastTickTime hunger =
     let
         secondsSinceEaten =
             sinceEaten lastTickTime hunger |> Duration.inSeconds
-
-        sec n =
-            Duration.seconds n |> Duration.inSeconds
     in
     if secondsSinceEaten >= sec 25 then
         Starving
@@ -513,10 +515,13 @@ updateFish lastTickTime fish ( fishes, seed, coins ) =
                 if shouldSpawnCoin then
                     let
                         newCoin =
-                            { initCoin
-                                | pos = fish.pos |> pixelsDown (fishSize.h // 2 + (coinSize.h // 2) |> toFloat)
-                                , id = coinId
-                            }
+                            initCoin lastTickTime
+                                |> (\c ->
+                                        { c
+                                            | pos = fish.pos |> pixelsDown (fishSize.h // 2 + (coinSize.h // 2) |> toFloat)
+                                            , id = coinId
+                                        }
+                                   )
                     in
                     ( newCoin :: coins, newSeed_ )
 
@@ -551,8 +556,8 @@ pixelsRight right =
     Point2d.translateIn Direction2d.x (Pixels.pixels right)
 
 
-updateCoin : Coin -> ( List Coin, Random.Seed ) -> ( List Coin, Random.Seed )
-updateCoin coin ( movedCoins, seed ) =
+updateCoin : Time.Posix -> Coin -> ( List Coin, Random.Seed ) -> ( List Coin, Random.Seed )
+updateCoin lastTickTime coin ( movedCoins, seed ) =
     let
         newPos =
             coin.pos
@@ -569,7 +574,18 @@ updateCoin coin ( movedCoins, seed ) =
                             np
                    )
     in
-    ( { coin | pos = newPos } :: movedCoins, seed )
+    if (timeSinceCoinCreated lastTickTime coin |> Duration.inSeconds) < sec 30 then
+        ( { coin | pos = newPos } :: movedCoins, seed )
+
+    else
+        ( movedCoins, seed )
+
+
+timeSinceCoinCreated : Time.Posix -> Coin -> Duration.Duration
+timeSinceCoinCreated lastTickTime { createdAt } =
+    (Time.posixToMillis lastTickTime - Time.posixToMillis createdAt)
+        |> toFloat
+        |> Duration.milliseconds
 
 
 onGameTick : Model -> ( Model, Cmd Msg )
@@ -583,7 +599,7 @@ onGameTick model =
 
         ( newCoins, newSeed ) =
             List.foldl
-                updateCoin
+                (updateCoin model.lastTickTime)
                 ( [], newSeed_ )
                 (model.coinsInPlay ++ newCoins_)
     in

@@ -44,6 +44,7 @@ type alias CoinId = Int
 type alias Coin =
     { id : CoinId
     , pos : Pixel2i
+    , createdAt : Time.Posix
     }
 
 type alias Fish =
@@ -62,10 +63,11 @@ initFish =
     , hunger = Sated (Time.millisToPosix 0)
     }
 
-initCoin : Coin
-initCoin =
+initCoin : Time.Posix -> Coin
+initCoin createdAt =
     { id = 0
     , pos = Point2d.pixels 0 0
+    , createdAt = createdAt
     }
 
 
