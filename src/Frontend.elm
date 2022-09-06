@@ -683,34 +683,30 @@ updateFish lastTickTime fish ( fishes, seed, coins ) =
                 |> Tuple.mapFirst constrainFishBounds
 
         ( newCoins_, newSeed ) =
-            if isSated then
+            let
+                ( ( shouldSpawnCoin, coinId ), newSeed_ ) =
+                    Random.step
+                        (Random.map2 Tuple.pair
+                            (generateShouldSpawnCoin hungerStatus)
+                            generateCoinId
+                        )
+                        seed
+            in
+            if shouldSpawnCoin then
                 let
-                    ( ( shouldSpawnCoin, coinId ), newSeed_ ) =
-                        Random.step
-                            (Random.map2 Tuple.pair
-                                generateShouldSpawnCoin
-                                generateCoinId
-                            )
-                            seed
+                    newCoin =
+                        initCoin lastTickTime
+                            |> (\c ->
+                                    { c
+                                        | pos = fish.pos |> pixelsDown (fishSize.h // 2 + (coinSize.h // 2) |> toFloat)
+                                        , id = coinId
+                                    }
+                               )
                 in
-                if shouldSpawnCoin then
-                    let
-                        newCoin =
-                            initCoin lastTickTime
-                                |> (\c ->
-                                        { c
-                                            | pos = fish.pos |> pixelsDown (fishSize.h // 2 + (coinSize.h // 2) |> toFloat)
-                                            , id = coinId
-                                        }
-                                   )
-                    in
-                    ( newCoin :: coins, newSeed_ )
-
-                else
-                    ( coins, newSeed_ )
+                ( newCoin :: coins, newSeed_ )
 
             else
-                ( coins, seed )
+                ( coins, newSeed_ )
 
         ( newestPos, newestSeed ) =
             newPos fish.pos newSeed
@@ -718,13 +714,23 @@ updateFish lastTickTime fish ( fishes, seed, coins ) =
     ( { fish | pos = newestPos } :: fishes, newestSeed, newCoins_ )
 
 
-generateShouldSpawnCoin : Random.Generator Bool
-generateShouldSpawnCoin =
-    Random.int 0 600
-        |> Random.andThen
-            (\res ->
-                Random.constant (res == 0)
-            )
+generateShouldSpawnCoin : HungerStatus -> Random.Generator Bool
+generateShouldSpawnCoin hungerStatus =
+    let
+        isZero result =
+            Random.constant (result == 0)
+    in
+    case hungerStatus of
+        NotHungry ->
+            Random.int 0 600
+                |> Random.andThen isZero
+
+        Hungry ->
+            Random.int 0 1200
+                |> Random.andThen isZero
+
+        _ ->
+            Random.constant False
 
 
 pixelsDown : Float -> Pixel2i -> Pixel2i
