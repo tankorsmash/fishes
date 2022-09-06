@@ -569,7 +569,7 @@ moveFish hungerStatus seed pos =
                     Point2d.toPixels pos
             in
             --if fish is close to bottom of aquarium, move it up
-            (if round pix.y >= (aquariumSize.h - fishSize.h) then
+            (if round pix.y >= (aquariumSize.h - (fishSize.h * 3)) then
                 Random.int -5 -1
 
              else
