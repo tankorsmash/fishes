@@ -143,9 +143,7 @@ viewCoin coin =
         ]
     <|
         ( String.fromInt coin.id
-        , monospace [ centerX, centerY ] <|
-            text <|
-                String.fromInt coin.id
+        , text ""
         )
 
 
@@ -193,25 +191,7 @@ viewFish lastTickTime fish =
         ]
     <|
         ( String.fromInt fish.id
-        , monospace [ centerX, centerY ] <|
-            text <|
-                let
-                    prettyPos : ({ x : Float, y : Float } -> Float) -> String
-                    prettyPos getter =
-                        .pos fish
-                            |> Point2d.toPixels
-                            |> getter
-                            |> round
-                            |> String.fromInt
-                            |> roundNumber
-
-                    xPos =
-                        prettyPos .x
-
-                    yPos =
-                        prettyPos .y
-                in
-                xPos ++ ", " ++ yPos
+        , text ""
         )
 
 
