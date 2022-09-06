@@ -52,7 +52,8 @@ app =
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     let
-        firstTickTime = Time.millisToPosix 0
+        firstTickTime =
+            Time.millisToPosix 0
     in
     ( { key = key
       , message = "Welcome to Lamdera! You're looking at the auto-generated base implementation. Check out src/Frontend.elm to start coding!"
@@ -159,6 +160,49 @@ viewCoin coin =
         )
 
 
+viewFishEye : Bool -> Element Msg
+viewFishEye isAlive =
+    let
+        iris =
+            if isAlive then
+                el
+                    [ width <| px 5
+                    , height <| px 5
+                    , Border.rounded 5
+                    , Background.color <| convertColor Color.black
+                    , alignRight
+                    , Element.moveDown 5
+                    , Element.moveRight -1
+                    ]
+                <|
+                    text ""
+
+            else
+                --dead iris
+                el
+                    [ Font.size 16
+                    , centerX
+                    , centerY
+                    , width fill
+                    , height fill
+                    , Font.center
+                    ]
+                <|
+                    text "x"
+    in
+    el
+        [ width <| px 15
+        , height <| px 15
+        , Border.rounded 5
+        , Background.color <| convertColor Color.white
+        , alignRight
+        , Element.moveDown 5
+        , Element.inFront iris
+        ]
+    <|
+        text ""
+
+
 viewFish : Time.Posix -> Fish -> Element Msg
 viewFish lastTickTime fish =
     let
@@ -225,6 +269,8 @@ viewFish lastTickTime fish =
             else
                 []
         , noUserSelect
+        , Element.inFront <|
+            viewFishEye (hungerStatus /= Starved)
         ]
     <|
         ( String.fromInt fish.id
