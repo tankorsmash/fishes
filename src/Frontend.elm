@@ -437,19 +437,37 @@ moveFish hungerStatus seed pos =
     let
         isSated =
             hungerStatus == NotHungry
+
+        moveGen =
+            Random.int 0 1000
+
+        rareMoveForward =
+            Random.int 0 2 |> Random.map (\right -> pixelsRight (toFloat right) pos)
+
+        standardMoveUpDown =
+            let
+                pix =
+                    Point2d.toPixels pos
+            in
+            --if fish is close to bottom of aquarium, move it up
+            (if round pix.y >= (aquariumSize.h - fishSize.h) then
+                Random.int -5 -1
+
+             else
+                Random.int -5 5
+            )
+                |> Random.map (\down -> pixelsDown (toFloat down) pos)
     in
     if isSated then
         Random.step
-            (Random.int 0 1000
+            (moveGen
                 |> Random.andThen
                     (\doIt ->
                         if doIt <= 5 then
-                            Random.int 0 2
-                                |> Random.map (\right -> pixelsRight (toFloat right) pos)
+                            rareMoveForward
 
                         else if doIt <= 15 then
-                            Random.int -5 5
-                                |> Random.map (\down -> pixelsDown (toFloat down) pos)
+                            standardMoveUpDown
 
                         else
                             Random.constant pos
