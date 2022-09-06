@@ -414,8 +414,8 @@ constrainFishBounds fishPos =
         fishPos
 
 
-moveFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List Fish, Random.Seed, List Coin )
-moveFish lastTickTime fish ( fishes, seed, coins ) =
+updateFish : Time.Posix -> Fish -> ( List Fish, Random.Seed, List Coin ) -> ( List Fish, Random.Seed, List Coin )
+updateFish lastTickTime fish ( fishes, seed, coins ) =
     let
         isSated =
             not <| isHungry lastTickTime fish.hunger
@@ -485,8 +485,8 @@ pixelsRight right =
     Point2d.translateIn Direction2d.x (Pixels.pixels right)
 
 
-moveCoin : Coin -> ( List Coin, Random.Seed ) -> ( List Coin, Random.Seed )
-moveCoin coin ( movedCoins, seed ) =
+updateCoin : Coin -> ( List Coin, Random.Seed ) -> ( List Coin, Random.Seed )
+updateCoin coin ( movedCoins, seed ) =
     let
         newPos =
             coin.pos
@@ -511,13 +511,13 @@ onGameTick model =
     let
         ( newFishes, newSeed_, newCoins_ ) =
             List.foldl
-                (moveFish model.lastTickTime)
+                (updateFish model.lastTickTime)
                 ( [], model.globalSeed, [] )
                 model.fishes
 
         ( newCoins, newSeed ) =
             List.foldl
-                moveCoin
+                updateCoin
                 ( [], newSeed_ )
                 (model.coinsInPlay ++ newCoins_)
     in
