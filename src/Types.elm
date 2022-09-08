@@ -3,6 +3,7 @@ module Types exposing (..)
 import Random
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
+import Browser.Dom
 import Pixels
 import Point2d
 import Time
@@ -83,6 +84,7 @@ type FrontendMsg
     | CollectCoin FishId
     | BuyFish
     | TogglePause
+    | ClickAquarium Pixel2i
 
 
 type ToBackend

@@ -1,6 +1,8 @@
 module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
+import Browser.Dom
+import Browser.Events
 import Browser.Navigation as Nav
 import Color
 import Color.Convert
@@ -17,12 +19,15 @@ import Element.Keyed as Keyed
 import Element.Lazy as Lazy
 import Html
 import Html.Attributes
+import Html.Events.Extra.Mouse as MouseEvents
+import Json.Decode as Decode
 import Lamdera
 import Length
 import List.Extra
 import Pixels
 import Point2d exposing (pixels)
 import Random
+import Task
 import Time
 import Types exposing (..)
 import Url
@@ -46,13 +51,33 @@ app =
         , updateFromBackend = updateFromBackend
         , subscriptions =
             \model ->
-                if model.isPaused then
-                    Sub.none
+                Sub.batch
+                    [ if model.isPaused then
+                        Sub.none
 
-                else
-                    Time.every (1000 / 60) GameTick
+                      else
+                        Time.every (1000 / 60) GameTick
+                    , Browser.Events.onClick decodeClick
+                    ]
         , view = viewWrapper
         }
+
+
+decodeClick : Decode.Decoder Msg
+decodeClick =
+    Decode.andThen
+        (\click ->
+            let
+                qwe : Decode.Value
+                qwe =
+                    click
+
+                _ =
+                    Debug.log "inner click" <| Debug.toString click
+            in
+            Decode.fail "ASDS"
+        )
+        Decode.value
 
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
@@ -343,6 +368,17 @@ viewFishes lastTickTime fishes coins =
          , Element.clip
          , Background.color <| rgb255 28 163 236
          , noUserSelect
+         , Element.htmlAttribute <| Html.Attributes.id "aquarium"
+
+         -- , Events.onClick ClickAquarium
+         , Element.htmlAttribute <|
+            MouseEvents.onDown <|
+                \evt ->
+                    ClickAquarium <|
+                        Point2d.fromPixels
+                            { x = Tuple.first evt.offsetPos
+                            , y = Tuple.second evt.offsetPos
+                            }
          ]
             ++ List.map (Element.inFront << viewFish lastTickTime) fishes
             ++ List.map (Element.inFront << viewCoin) coins
@@ -447,6 +483,14 @@ update msg model =
 
         TogglePause ->
             ( { model | isPaused = not model.isPaused }, Cmd.none )
+
+        ClickAquarium pos ->
+            let
+                _ =
+                    Debug.log "pos" pos
+            in
+            -- ( model, Task.attempt GotClickOnAquarium <| Browser.Events.getViewportOf "aquarium" )
+            noop
 
 
 generateCoinId : Random.Generator Int
