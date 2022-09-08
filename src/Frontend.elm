@@ -57,27 +57,9 @@ app =
 
                       else
                         Time.every (1000 / 60) GameTick
-                    , Browser.Events.onClick decodeClick
                     ]
         , view = viewWrapper
         }
-
-
-decodeClick : Decode.Decoder Msg
-decodeClick =
-    Decode.andThen
-        (\click ->
-            let
-                qwe : Decode.Value
-                qwe =
-                    click
-
-                _ =
-                    Debug.log "inner click" <| Debug.toString click
-            in
-            Decode.fail "ASDS"
-        )
-        Decode.value
 
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
